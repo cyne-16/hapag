@@ -687,3 +687,72 @@ p { margin-top: 16px; font-size: 0.9rem; }
     font-weight: 600;
     margin-bottom: 0;
 }
+
+/* ── WEEKLY CHALLENGES ── */
+.challenges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.challenge-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.challenge-complete {
+    border-color: #2e7d32;
+    background: #f1f8f2;
+}
+
+.challenge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.challenge-header h3 {
+    color: #333;
+    font-size: 1.05rem;
+}
+
+.challenge-points {
+    background: #fff3e0;
+    color: #e05c00;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.challenge-desc {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+.challenge-progress-bar {
+    background: #eee;
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.challenge-progress-fill {
+    background: #2e7d32;
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.challenge-progress-text {
+    font-size: 0.8rem;
+    color: #999;
+    margin-bottom: 14px;
+}

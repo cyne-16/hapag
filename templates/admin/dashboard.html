@@ -13,6 +13,8 @@
             <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
             <a href="{{ url_for('admin_users') }}">Users</a>
             <a href="{{ url_for('admin_recipes') }}">Recipes</a>
+            <a href="{{ url_for('admin_ai_review') }}">AI Review</a>
+            <a href="{{ url_for('admin_statistics') }}">Statistics</a>
             <a href="{{ url_for('dashboard') }}">Back to App</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
@@ -69,18 +71,29 @@
         </div>
 
         <!-- QUICK LINKS -->
-        <div class="dashboard-cards" style="margin-top: 24px;">
-            <div class="card" onclick="window.location='{{ url_for('admin_users') }}'">
-                <div class="card-icon">👥</div>
-                <h3>Manage Users</h3>
-                <p>View and delete user accounts</p>
-            </div>
-            <div class="card" onclick="window.location='{{ url_for('admin_recipes') }}'">
-                <div class="card-icon">🍲</div>
-                <h3>Manage Recipes</h3>
-                <p>Add, edit, and delete recipes</p>
-            </div>
-        </div>
+        <!-- QUICK LINKS -->
+<div class="dashboard-cards" style="margin-top: 24px;">
+    <div class="card" onclick="window.location='{{ url_for('admin_users') }}'">
+        <div class="card-icon">👥</div>
+        <h3>Manage Users</h3>
+        <p>View and delete user accounts</p>
+    </div>
+    <div class="card" onclick="window.location='{{ url_for('admin_recipes') }}'">
+        <div class="card-icon">🍲</div>
+        <h3>Manage Recipes</h3>
+        <p>Add, edit, and delete recipes</p>
+    </div>
+    <div class="card" onclick="window.location='{{ url_for('admin_ai_review') }}'">
+        <div class="card-icon">🤖</div>
+        <h3>Review AI Recipes</h3>
+        <p>Approve or dismiss AI-generated recipes</p>
+    </div>
+    <div class="card" onclick="window.location='{{ url_for('admin_statistics') }}'">
+    <div class="card-icon">📊</div>
+    <h3>Activity Statistics</h3>
+    <p>View user activity and engagement trends</p>
+</div>
+</div>
     </div>
 
 </body>

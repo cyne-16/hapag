@@ -33,6 +33,149 @@ def load_user(user_id):
 # ─────────────────────────────────────────────
 # HOME
 # ─────────────────────────────────────────────
+from datetime import datetime
+
+def log_activity(action_type, username, details=""):
+    """Records a user activity event for admin statistics."""
+    try:
+        db.activity_logs.insert_one({
+            "action_type": action_type,  # "login", "search", "cooked", "register"
+            "username": username,
+            "details": details,
+            "timestamp": datetime.now(),
+            "date": datetime.now().strftime("%Y-%m-%d")
+        })
+    except Exception as e:
+        print(f"Activity log error: {e}")
+
+# ─────────────────────────────────────────────
+# CHALLENGE TEMPLATES (the pool to pick from)
+# ─────────────────────────────────────────────
+
+CHALLENGE_POOL = [
+    {"id": "cook_3_pork", "title": "Pork Lover", "description": "Cook 3 Pork dishes this week", "type": "category_count", "category": "Pork", "target": 3, "points": 50},
+    {"id": "cook_3_chicken", "title": "Chicken Champion", "description": "Cook 3 Chicken dishes this week", "type": "category_count", "category": "Chicken", "target": 3, "points": 50},
+    {"id": "cook_3_seafood", "title": "Seafood Specialist", "description": "Cook 3 Seafood dishes this week", "type": "category_count", "category": "Seafood", "target": 3, "points": 50},
+    {"id": "cook_3_vegetable", "title": "Veggie Victory", "description": "Cook 3 Vegetable dishes this week", "type": "category_count", "category": "Vegetable", "target": 3, "points": 50},
+    {"id": "budget_saver", "title": "Budget Saver", "description": "Cook 3 recipes that cost ₱150 or less", "type": "budget_count", "max_cost": 150, "target": 3, "points": 60},
+    {"id": "try_new", "title": "Adventurous Cook", "description": "Cook 2 recipes you've never cooked before", "type": "new_recipes", "target": 2, "points": 40},
+    {"id": "cook_5_total", "title": "Kitchen Warrior", "description": "Cook 5 recipes this week, any kind", "type": "total_count", "target": 5, "points": 70},
+    {"id": "soup_lover", "title": "Soup Season", "description": "Cook 2 Soup dishes this week", "type": "category_count", "category": "Soup", "target": 2, "points": 45},
+]
+
+import random
+
+def get_current_week_id():
+    """Returns a string like '2026-W25' representing the current ISO week."""
+    now = datetime.now()
+    year, week, _ = now.isocalendar()
+    return f"{year}-W{week}"
+
+
+def get_weekly_challenges():
+    """Gets (or creates) this week's 3 active challenges, deterministically seeded by week."""
+    week_id = get_current_week_id()
+
+    existing = db.weekly_challenges.find_one({"week_id": week_id})
+    if existing:
+        return existing["challenges"]
+
+    # Deterministic random selection so it's the same for everyone, but changes weekly
+    random.seed(week_id)
+    selected = random.sample(CHALLENGE_POOL, 3)
+
+    db.weekly_challenges.insert_one({
+        "week_id": week_id,
+        "challenges": selected,
+        "created_at": datetime.now()
+    })
+
+    return selected
+
+
+def get_user_challenge_progress(user_id, challenges):
+    """Calculates how far along the user is on each of this week's challenges."""
+    week_id = get_current_week_id()
+    now = datetime.now()
+    year, week, _ = now.isocalendar()
+
+    # Get start of this ISO week (Monday)
+    week_start = datetime.fromisocalendar(year, week, 1)
+
+    user_data = db.users.find_one({"_id": ObjectId(user_id)})
+    cooking_history = user_data.get("cooking_history", [])
+
+    # Filter to only this week's cooking activity
+    this_week_cooks = []
+    for entry in cooking_history:
+        try:
+            cook_date = datetime.strptime(entry["date"], "%Y-%m-%d %H:%M")
+            if cook_date >= week_start:
+                this_week_cooks.append(entry)
+        except (ValueError, KeyError):
+            continue
+
+    progress_list = []
+
+    for challenge in challenges:
+        progress = 0
+
+        if challenge["type"] == "total_count":
+            progress = len(this_week_cooks)
+
+        elif challenge["type"] == "category_count":
+            # Need to look up each recipe's category
+            count = 0
+            for entry in this_week_cooks:
+                recipe = db.recipes.find_one({"name": {"$regex": f"^{entry['name']}$", "$options": "i"}})
+                if recipe and recipe.get("category") == challenge["category"]:
+                    count += 1
+            progress = count
+
+        elif challenge["type"] == "budget_count":
+            count = 0
+            for entry in this_week_cooks:
+                recipe = db.recipes.find_one({"name": {"$regex": f"^{entry['name']}$", "$options": "i"}})
+                if recipe:
+                    cost_str = recipe.get("estimated_total_cost", "₱999")
+                    digits = "".join(c for c in cost_str if c.isdigit())
+                    cost = int(digits) if digits else 999
+                    if cost <= challenge["max_cost"]:
+                        count += 1
+            progress = count
+
+        elif challenge["type"] == "new_recipes":
+            # Count unique recipe names cooked this week that weren't cooked before this week
+            before_week_names = set()
+            for entry in cooking_history:
+                try:
+                    cook_date = datetime.strptime(entry["date"], "%Y-%m-%d %H:%M")
+                    if cook_date < week_start:
+                        before_week_names.add(entry["name"].lower())
+                except (ValueError, KeyError):
+                    continue
+
+            new_names = set()
+            for entry in this_week_cooks:
+                if entry["name"].lower() not in before_week_names:
+                    new_names.add(entry["name"].lower())
+            progress = len(new_names)
+
+        completed = progress >= challenge["target"]
+
+        # Check if already claimed
+        claim_key = f"{week_id}_{challenge['id']}"
+        already_claimed = claim_key in user_data.get("claimed_challenges", [])
+
+        progress_list.append({
+            **challenge,
+            "progress": min(progress, challenge["target"]),
+            "completed": completed,
+            "claimed": already_claimed,
+            "claim_key": claim_key
+        })
+
+    return progress_list
 
 @app.route("/")
 def home():
@@ -70,6 +213,7 @@ def register():
             "cooking_history": []
         })
 
+        log_activity("register", username, f"New account created: {email}")
         flash("Account created! Please log in.", "success")
         return redirect(url_for("login"))
 
@@ -196,6 +340,8 @@ def recommend():
         session["preferred_dish"] = preferred_dish
         session["household_size"] = household_size
         session["meal_type"] = meal_type
+
+        log_activity("search", current_user.username, preferred_dish)
 
         return redirect(url_for("recommend_results"))
 
@@ -498,6 +644,35 @@ Respond ONLY in this exact JSON format, no extra text:
     except (ValueError, TypeError):
         household_size = 1
 
+    # Log AI-generated recipes for admin review (skip duplicates)
+    if source == "ai":
+        from datetime import datetime
+        existing_log = db.ai_recipe_logs.find_one({"name": {"$regex": f"^{recipe.get('name', recipe_name)}$", "$options": "i"}})
+
+        if not existing_log:
+            db.ai_recipe_logs.insert_one({
+                "name": recipe.get("name", recipe_name),
+                "description": recipe.get("description", ""),
+                "servings": recipe.get("servings", ""),
+                "prep_time": recipe.get("prep_time", ""),
+                "cook_time": recipe.get("cook_time", ""),
+                "estimated_total_cost": recipe.get("estimated_total_cost", ""),
+                "ingredients": recipe.get("ingredients", []),
+                "instructions": recipe.get("instructions", []),
+                "tips": recipe.get("tips", ""),
+                "category": recipe.get("category", "Other"),
+                "tags": recipe.get("tags", []),
+                "viewed_by": current_user.username,
+                "date_generated": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "status": "pending",
+                "view_count": 1
+            })
+        else:
+            db.ai_recipe_logs.update_one(
+                {"_id": existing_log["_id"]},
+                {"$inc": {"view_count": 1}}
+            )
+
     return render_template("recipe_detail.html",
                            recipe=recipe,
                            source=source,
@@ -527,6 +702,8 @@ def mark_cooked(recipe_name):
             "date": datetime.now().strftime("%Y-%m-%d %H:%M")
         }}}
     )
+
+    log_activity("cooked", current_user.username, recipe_name)
 
     # Award points
     points_earned = 15 if is_first_time else 10
@@ -992,3 +1169,250 @@ def admin_update_prices(recipe_id):
         return redirect(url_for("admin_recipes"))
 
     return render_template("admin/update_prices.html", recipe=recipe)
+
+# ─────────────────────────────────────────────
+# ADMIN - REVIEW AI-GENERATED RECIPES
+# ─────────────────────────────────────────────
+
+@app.route("/admin/ai-review")
+@login_required
+@admin_required
+def admin_ai_review():
+    status_filter = request.args.get("status", "pending")
+
+    if status_filter == "all":
+        logs = list(db.ai_recipe_logs.find().sort("view_count", -1))
+    else:
+        logs = list(db.ai_recipe_logs.find({"status": status_filter}).sort("view_count", -1))
+
+    pending_count = db.ai_recipe_logs.count_documents({"status": "pending"})
+
+    return render_template("admin/ai_review.html",
+                           logs=logs,
+                           status_filter=status_filter,
+                           pending_count=pending_count)
+# ─────────────────────────────────────────────
+# ADMIN - EDIT AI-GENERATED RECIPE BEFORE APPROVAL
+# ─────────────────────────────────────────────
+
+@app.route("/admin/ai-review/<log_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def admin_edit_ai_recipe(log_id):
+    log = db.ai_recipe_logs.find_one({"_id": ObjectId(log_id)})
+
+    if not log:
+        flash("Log not found.", "danger")
+        return redirect(url_for("admin_ai_review"))
+
+    if request.method == "POST":
+        name = request.form.get("name")
+        description = request.form.get("description")
+        servings = request.form.get("servings")
+        prep_time = request.form.get("prep_time")
+        cook_time = request.form.get("cook_time")
+        estimated_total_cost = request.form.get("estimated_total_cost")
+        tips = request.form.get("tips")
+        category = request.form.get("category")
+        tags_raw = request.form.get("tags", "")
+        tags = [t.strip() for t in tags_raw.split(",") if t.strip()]
+
+        ingredient_names = request.form.getlist("ingredient_name")
+        ingredient_quantities = request.form.getlist("ingredient_quantity")
+        ingredient_prices = request.form.getlist("ingredient_price")
+
+        ingredients = []
+        for i in range(len(ingredient_names)):
+            if ingredient_names[i]:
+                ingredients.append({
+                    "name": ingredient_names[i],
+                    "quantity": ingredient_quantities[i],
+                    "estimated_price": ingredient_prices[i]
+                })
+
+        instructions_raw = request.form.get("instructions", "")
+        instructions = [line.strip() for line in instructions_raw.split("\n") if line.strip()]
+
+        db.ai_recipe_logs.update_one(
+            {"_id": ObjectId(log_id)},
+            {"$set": {
+                "name": name,
+                "description": description,
+                "servings": servings,
+                "prep_time": prep_time,
+                "cook_time": cook_time,
+                "estimated_total_cost": estimated_total_cost,
+                "ingredients": ingredients,
+                "instructions": instructions,
+                "tips": tips,
+                "category": category,
+                "tags": tags
+            }}
+        )
+
+        flash("AI recipe updated! Review the changes and approve when ready.", "success")
+        return redirect(url_for("admin_ai_review"))
+
+    return render_template("admin/edit_ai_recipe.html", log=log)
+
+@app.route("/admin/ai-review/<log_id>/approve", methods=["POST"])
+@login_required
+@admin_required
+def admin_approve_ai_recipe(log_id):
+    log = db.ai_recipe_logs.find_one({"_id": ObjectId(log_id)})
+
+    if not log:
+        flash("Log not found.", "danger")
+        return redirect(url_for("admin_ai_review"))
+
+    # Save into the permanent recipes collection
+    db.recipes.insert_one({
+        "name": log.get("name"),
+        "description": log.get("description"),
+        "servings": log.get("servings"),
+        "prep_time": log.get("prep_time"),
+        "cook_time": log.get("cook_time"),
+        "estimated_total_cost": log.get("estimated_total_cost"),
+        "ingredients": log.get("ingredients", []),
+        "instructions": log.get("instructions", []),
+        "tips": log.get("tips", ""),
+        "category": log.get("category", "Other"),
+        "tags": log.get("tags", [])
+    })
+
+    db.ai_recipe_logs.update_one(
+        {"_id": ObjectId(log_id)},
+        {"$set": {"status": "approved"}}
+    )
+
+    flash(f"'{log.get('name')}' approved and added to the recipe database!", "success")
+    return redirect(url_for("admin_ai_review"))
+
+
+@app.route("/admin/ai-review/<log_id>/dismiss", methods=["POST"])
+@login_required
+@admin_required
+def admin_dismiss_ai_recipe(log_id):
+    db.ai_recipe_logs.update_one(
+        {"_id": ObjectId(log_id)},
+        {"$set": {"status": "dismissed"}}
+    )
+    flash("Recipe dismissed.", "success")
+    return redirect(url_for("admin_ai_review"))
+
+# ─────────────────────────────────────────────
+# ADMIN - USER ACTIVITY STATISTICS
+# ─────────────────────────────────────────────
+
+@app.route("/admin/statistics")
+@login_required
+@admin_required
+def admin_statistics():
+    from datetime import timedelta
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+
+    # Active users today
+    active_today = len(db.activity_logs.distinct("username", {"date": today}))
+
+    # Active users this week
+    active_week = len(db.activity_logs.distinct("username", {"date": {"$gte": week_ago}}))
+
+    # Total searches this week
+    searches_week = db.activity_logs.count_documents({"action_type": "search", "date": {"$gte": week_ago}})
+
+    # Total recipes cooked this week
+    cooked_week = db.activity_logs.count_documents({"action_type": "cooked", "date": {"$gte": week_ago}})
+
+    # New registrations this week
+    new_users_week = db.activity_logs.count_documents({"action_type": "register", "date": {"$gte": week_ago}})
+
+    # Most searched dishes (all time)
+    search_pipeline = [
+        {"$match": {"action_type": "search"}},
+        {"$group": {"_id": "$details", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 5}
+    ]
+    most_searched = list(db.activity_logs.aggregate(search_pipeline))
+
+    # Most cooked recipes platform-wide (all time)
+    cooked_pipeline = [
+        {"$match": {"action_type": "cooked"}},
+        {"$group": {"_id": "$details", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 5}
+    ]
+    most_cooked_platform = list(db.activity_logs.aggregate(cooked_pipeline))
+
+    # Recent activity feed (last 20 events)
+    recent_activity = list(db.activity_logs.find().sort("timestamp", -1).limit(20))
+
+    return render_template("admin/statistics.html",
+                           active_today=active_today,
+                           active_week=active_week,
+                           searches_week=searches_week,
+                           cooked_week=cooked_week,
+                           new_users_week=new_users_week,
+                           most_searched=most_searched,
+                           most_cooked_platform=most_cooked_platform,
+                           recent_activity=recent_activity)
+
+# ─────────────────────────────────────────────
+# WEEKLY CHALLENGES PAGE
+# ─────────────────────────────────────────────
+
+@app.route("/challenges")
+@login_required
+def challenges():
+    weekly_challenges = get_weekly_challenges()
+    progress_data = get_user_challenge_progress(current_user.id, weekly_challenges)
+
+    return render_template("challenges.html", challenges=progress_data)
+
+
+@app.route("/challenges/claim/<claim_key>", methods=["POST"])
+@login_required
+def claim_challenge(claim_key):
+    weekly_challenges = get_weekly_challenges()
+    progress_data = get_user_challenge_progress(current_user.id, weekly_challenges)
+
+    matched_challenge = next((c for c in progress_data if c["claim_key"] == claim_key), None)
+
+    if not matched_challenge:
+        flash("Challenge not found.", "danger")
+        return redirect(url_for("challenges"))
+
+    if matched_challenge["claimed"]:
+        flash("You already claimed this reward!", "danger")
+        return redirect(url_for("challenges"))
+
+    if not matched_challenge["completed"]:
+        flash("Challenge not completed yet!", "danger")
+        return redirect(url_for("challenges"))
+
+    # Award points and mark as claimed
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+    new_points = user_data.get("points", 0) + matched_challenge["points"]
+
+    # Recalculate level
+    if new_points >= 600:
+        new_level = "Master Chef"
+    elif new_points >= 300:
+        new_level = "Skilled Cook"
+    elif new_points >= 100:
+        new_level = "Home Cook"
+    else:
+        new_level = "Beginner Cook"
+
+    db.users.update_one(
+        {"_id": ObjectId(current_user.id)},
+        {
+            "$set": {"points": new_points, "level": new_level},
+            "$push": {"claimed_challenges": claim_key}
+        }
+    )
+
+    flash(f"🎉 Challenge complete! You earned {matched_challenge['points']} bonus points!", "success")
+    return redirect(url_for("challenges"))

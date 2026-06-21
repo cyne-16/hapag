@@ -13,6 +13,7 @@
         <div class="nav-links">
             <a href="{{ url_for('dashboard') }}">Home</a>
             <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('challenges') }}">Challenges</a>
             <a href="{{ url_for('profile') }}">Profile</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
@@ -46,6 +47,12 @@
                 <h3>Cooking History</h3>
                 <p>Recipes you have cooked</p>
             </div>
+
+            <div class="card" onclick="window.location='{{ url_for('challenges') }}'">
+    <div class="card-icon">🎯</div>
+    <h3>Weekly Challenges</h3>
+    <p>Complete challenges for bonus points</p>
+</div>
         </div>
     </div>
 

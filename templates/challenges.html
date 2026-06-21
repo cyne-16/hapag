@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Weekly Challenges - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>🎯 Weekly Challenges</h2>
+        <p style="color:#888; margin-top:6px;">
+            New challenges every week! Complete them to earn bonus points.
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="challenges-grid" style="margin-top:24px;">
+            {% for challenge in challenges %}
+            <div class="challenge-card {% if challenge.completed %}challenge-complete{% endif %}">
+                <div class="challenge-header">
+                    <h3>{{ challenge.title }}</h3>
+                    <span class="challenge-points">+{{ challenge.points }} pts</span>
+                </div>
+                <p class="challenge-desc">{{ challenge.description }}</p>
+
+                <div class="challenge-progress-bar">
+                    <div class="challenge-progress-fill"
+                         style="width: {{ (challenge.progress / challenge.target * 100) | int }}%"></div>
+                </div>
+                <p class="challenge-progress-text">
+                    {{ challenge.progress }} / {{ challenge.target }}
+                </p>
+
+                {% if challenge.claimed %}
+                    <button class="btn-secondary" disabled style="width:100%; cursor:not-allowed;">
+                        ✅ Claimed
+                    </button>
+                {% elif challenge.completed %}
+                    <form method="POST" action="{{ url_for('claim_challenge', claim_key=challenge.claim_key) }}">
+                        <button type="submit" class="btn-cooked" style="width:100%;">
+                            🎁 Claim Reward
+                        </button>
+                    </form>
+                {% else %}
+                    <button class="btn-secondary" disabled style="width:100%; cursor:not-allowed;">
+                        🔒 In Progress
+                    </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="empty-state" style="margin-top:20px;">
+            <p style="font-size:0.85rem;">🔄 Challenges reset every Monday. Check back for new ones!</p>
+        </div>
+    </div>
+
+</body>
+</html>
