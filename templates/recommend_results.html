@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recipe Recommendations - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>🍽️ Recommended Recipes</h2>
+
+        <!-- SEARCH SUMMARY -->
+        <div class="search-summary">
+            <span>💰 Budget: <strong>₱{{ budget }}</strong></span>
+            <span>🍳 Preference: <strong>{{ preferred_dish }}</strong></span>
+            <span>👥 Household: <strong>{{ household_size }} persons</strong></span>
+            <span>🕐 Meal Type: <strong>{{ meal_type }}</strong></span>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        {% if recipes %}
+            <div class="recipe-grid">
+                {% for recipe in recipes %}
+               <div class="recipe-card">
+    <div class="recipe-icon">🍲</div>
+
+    {% if recipe.source == "database" %}
+        <span style="
+            background:#e8f5e9;
+            color:#2e7d32;
+            padding:4px 8px;
+            border-radius:6px;
+            font-size:12px;
+            font-weight:bold;
+            display:inline-block;
+            margin-bottom:8px;">
+            📚 Database Recipe
+        </span>
+    {% else %}
+        <span style="
+            background:#e3f2fd;
+            color:#1565c0;
+            padding:4px 8px;
+            border-radius:6px;
+            font-size:12px;
+            font-weight:bold;
+            display:inline-block;
+            margin-bottom:8px;">
+            🤖 AI Recommendation
+        </span>
+    {% endif %}
+
+    <h3>{{ recipe.name }}</h3>
+    <p class="recipe-desc">{{ recipe.description }}</p>
+
+                   <div class="recipe-meta">
+    {% if recipe.source == "database" %}
+        <span style="background:#e3f2fd; color:#1565c0;">📚 Saved Recipe</span>
+    {% else %}
+        <span style="background:#fff8e1; color:#7a6000;">🤖 AI Generated</span>
+    {% endif %}
+    {% set cost_num = recipe.estimated_cost | replace('₱', '') | replace(',', '') | int %}
+    {% set budget_num = budget | int %}
+    {% if cost_num <= budget_num %}
+        <span style="background:#e8f5e9; color:#2e7d32;">✅ Within Budget</span>
+    {% else %}
+        <span style="background:#ffebee; color:#c62828;">⚠️ Over Budget</span>
+    {% endif %}
+     {% if recipe.category %}
+        <span style="background:#f3e5f5; color:#6a1b9a;">🏷️ {{ recipe.category }}</span>
+    {% endif %}
+    <span>💰 {{ recipe.estimated_cost }}</span>
+    <span>⏱ Prep: {{ recipe.prep_time }}</span>
+    <span>🔥 Cook: {{ recipe.cook_time }}</span>
+    <span>👥 Serves: {{ recipe.servings }}</span>
+</div>
+
+                    <a href="{{ url_for('recipe_detail', recipe_name=recipe.name) }}" 
+                       class="btn" style="width:100%; text-align:center; display:block; margin-top:12px;">
+                        View Full Recipe
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>😕 No recipes found. Please try again.</p>
+                <a href="{{ url_for('recommend') }}" class="btn">Try Again</a>
+            </div>
+        {% endif %}
+
+        <div style="margin-top: 24px;">
+            <a href="{{ url_for('recommend') }}" class="btn-secondary">🔄 Search Again</a>
+        </div>
+    </div>
+
+</body>
+</html>

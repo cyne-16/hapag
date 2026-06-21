@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag Admin</div>
+        <div class="nav-links">
+            <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('admin_users') }}">Users</a>
+            <a href="{{ url_for('admin_recipes') }}">Recipes</a>
+            <a href="{{ url_for('dashboard') }}">Back to App</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>⚙️ Admin Dashboard</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <!-- STATS -->
+        <div class="stats-row" style="margin-top: 24px;">
+            <div class="stat-box">
+                <h3>👥 Total Users</h3>
+                <p class="stat-number">{{ total_users }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>🍲 Total Recipes</h3>
+                <p class="stat-number">{{ total_recipes }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>📊 Status</h3>
+                <p class="stat-number" style="font-size:1rem; color:#2e7d32;">✅ Online</p>
+            </div>
+        </div>
+
+        <!-- RECENT USERS -->
+        <div class="recipe-section" style="margin-top: 24px;">
+            <h3>🆕 Recent Users</h3>
+            <table class="ingredients-table" style="margin-top: 12px;">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Points</th>
+                        <th>Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in recent_users %}
+                    <tr>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.points }}</td>
+                        <td>{{ user.level }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- QUICK LINKS -->
+        <div class="dashboard-cards" style="margin-top: 24px;">
+            <div class="card" onclick="window.location='{{ url_for('admin_users') }}'">
+                <div class="card-icon">👥</div>
+                <h3>Manage Users</h3>
+                <p>View and delete user accounts</p>
+            </div>
+            <div class="card" onclick="window.location='{{ url_for('admin_recipes') }}'">
+                <div class="card-icon">🍲</div>
+                <h3>Manage Recipes</h3>
+                <p>Add, edit, and delete recipes</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

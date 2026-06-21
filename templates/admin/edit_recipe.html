@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Recipe - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag Admin</div>
+        <div class="nav-links">
+            <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('admin_recipes') }}">Recipes</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>✏️ Edit Recipe</h2>
+
+        <div class="form-card" style="max-width: 700px; margin-top: 24px;">
+            <form method="POST">
+
+                <label>Recipe Name</label>
+                <input type="text" name="name" value="{{ recipe.name }}" required>
+
+                <label>Description</label>
+                <textarea name="description" rows="3"
+                          style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:16px; font-size:1rem;">{{ recipe.description }}</textarea>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label>Servings</label>
+                        <input type="text" name="servings" value="{{ recipe.servings }}">
+                    </div>
+                    <div>
+                        <label>Estimated Total Cost</label>
+                        <input type="text" name="estimated_total_cost" value="{{ recipe.estimated_total_cost }}">
+                    </div>
+                    <div>
+                        <label>Prep Time</label>
+                        <input type="text" name="prep_time" value="{{ recipe.prep_time }}">
+                    </div>
+                    <div>
+                        <label>Cook Time</label>
+                        <input type="text" name="cook_time" value="{{ recipe.cook_time }}">
+                    </div>
+                </div>
+
+                <!-- INGREDIENTS -->
+                <h3 style="margin: 20px 0 12px;">🛒 Ingredients</h3>
+                <div id="ingredients-container">
+                    {% for ingredient in recipe.ingredients %}
+                    <div class="ingredient-row">
+                        <input type="text" name="ingredient_name" value="{{ ingredient.name }}">
+                        <input type="text" name="ingredient_quantity" value="{{ ingredient.quantity }}">
+                        <input type="text" name="ingredient_price" value="{{ ingredient.estimated_price }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" onclick="addIngredient()" class="btn-secondary"
+                        style="margin-bottom:20px;">
+                    ➕ Add Ingredient
+                </button>
+
+                <!-- INSTRUCTIONS -->
+                <label>Cooking Instructions (one step per line)</label>
+                <textarea name="instructions" rows="6"
+                          style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:16px; font-size:1rem;">{{ recipe.instructions | join('\n') }}</textarea>
+
+                          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+    <div>
+        <label>Category</label>
+        <select name="category">
+            <option value="Pork" {% if recipe.category == "Pork" %}selected{% endif %}>Pork</option>
+            <option value="Chicken" {% if recipe.category == "Chicken" %}selected{% endif %}>Chicken</option>
+            <option value="Beef" {% if recipe.category == "Beef" %}selected{% endif %}>Beef</option>
+            <option value="Seafood" {% if recipe.category == "Seafood" %}selected{% endif %}>Seafood</option>
+            <option value="Vegetable" {% if recipe.category == "Vegetable" %}selected{% endif %}>Vegetable</option>
+            <option value="Soup" {% if recipe.category == "Soup" %}selected{% endif %}>Soup</option>
+            <option value="Noodles" {% if recipe.category == "Noodles" %}selected{% endif %}>Noodles</option>
+            <option value="Snack" {% if recipe.category == "Snack" %}selected{% endif %}>Snack</option>
+            <option value="Other" {% if recipe.category == "Other" %}selected{% endif %}>Other</option>
+        </select>
+    </div>
+    <div>
+        <label>Tags (comma-separated)</label>
+        <input type="text" name="tags" value="{{ recipe.tags | join(', ') if recipe.tags else '' }}">
+    </div>
+</div>
+
+                <label>Cooking Tips (optional)</label>
+                <input type="text" name="tips" value="{{ recipe.tips }}">
+
+                <button type="submit">💾 Update Recipe</button>
+                <a href="{{ url_for('admin_recipes') }}" class="btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function addIngredient() {
+            const container = document.getElementById('ingredients-container');
+            const row = document.createElement('div');
+            row.className = 'ingredient-row';
+            row.innerHTML = `
+                <input type="text" name="ingredient_name" placeholder="Ingredient name">
+                <input type="text" name="ingredient_quantity" placeholder="Quantity">
+                <input type="text" name="ingredient_price" placeholder="Price e.g. ₱50">
+            `;
+            container.appendChild(row);
+        }
+    </script>
+
+</body>
+</html>

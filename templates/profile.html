@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+
+        <!-- PROFILE CARD -->
+        <div class="profile-card">
+            {% if user.profile_picture %}
+    <img src="{{ user.profile_picture }}" alt="Profile"
+         style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin: 0 auto 12px;">
+{% else %}
+    <div class="profile-avatar">👤</div>
+{% endif %}
+            <h2>{{ user.username }}</h2>
+            <p>{{ user.email }}</p>
+            <a href="{{ url_for('edit_profile') }}" class="btn">Edit Profile</a>
+        </div>
+
+        <!-- POINTS AND LEVEL -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <h3>⭐ Points</h3>
+                <p class="stat-number">{{ user.points }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>🏅 Level</h3>
+                <p class="stat-number">{{ user.level }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>🍳 Recipes Cooked</h3>
+                <p class="stat-number">{{ user.cooking_history | length }}</p>
+            </div>
+        </div>
+
+        <!-- LEVEL PROGRESS BAR -->
+        <div class="progress-section">
+            <h3>Level Progress</h3>
+            {% if user.points < 100 %}
+                <p>{{ user.points }} / 100 pts to reach Home Cook</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ (user.points / 100 * 100) | int }}%"></div>
+                </div>
+            {% elif user.points < 300 %}
+                <p>{{ user.points }} / 300 pts to reach Skilled Cook</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ ((user.points - 100) / 200 * 100) | int }}%"></div>
+                </div>
+            {% elif user.points < 600 %}
+                <p>{{ user.points }} / 600 pts to reach Master Chef</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ ((user.points - 300) / 300 * 100) | int }}%"></div>
+                </div>
+            {% else %}
+                <p>🎉 You have reached the highest level: Master Chef!</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%"></div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- BADGES -->
+        <div class="badges-section">
+            <h3>🏆 My Badges</h3>
+            {% if user.badges %}
+                <div class="badges-grid">
+                    {% for badge in user.badges %}
+                        <div class="badge-item">{{ badge }}</div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No badges yet. Start cooking to earn badges!</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+</body>
+</html>

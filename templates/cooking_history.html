@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cooking History - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>📖 My Cooking History</h2>
+
+        {% if most_cooked %}
+        <!-- MOST COOKED -->
+        <div class="recipe-section" style="margin-top: 24px;">
+            <h3>🏆 Most Cooked Recipes</h3>
+            <div class="most-cooked-list">
+                {% for name, count in most_cooked %}
+                <div class="most-cooked-item">
+                    <a href="{{ url_for('recipe_detail', recipe_name=name) }}">
+                        {{ name }}
+                    </a>
+                    <span class="cook-count">🍳 Cooked {{ count }}x</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if history %}
+        <!-- FULL HISTORY -->
+        <div class="recipe-section" style="margin-top: 24px;">
+            <h3>📅 All Cooking Activity</h3>
+            <div class="history-list">
+                {% for item in history %}
+                <div class="history-item">
+                    <div class="history-info">
+                        <a href="{{ url_for('recipe_detail', recipe_name=item.name) }}">
+                            🍲 {{ item.name }}
+                        </a>
+                        <span class="history-date">📅 {{ item.date }}</span>
+                    </div>
+                    <span class="history-points">+10 pts</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+            <div class="empty-state">
+                <p>📖 No cooking history yet.</p>
+                <p>Cook a recipe and mark it as done to track your history!</p>
+                <a href="{{ url_for('recommend') }}" class="btn" style="margin-top:16px;">
+                    Find Recipes
+                </a>
+            </div>
+        {% endif %}
+
+    </div>
+
+</body>
+</html>

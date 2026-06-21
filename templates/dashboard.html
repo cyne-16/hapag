@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>Welcome back, {{ user.username }}! 👋</h2>
+        <p>What would you like to cook today?</p>
+
+        <div class="dashboard-cards">
+            <div class="card" onclick="window.location='{{ url_for('recommend') }}'">
+                <div class="card-icon">🔍</div>
+                <h3>Get Recipe Recommendations</h3>
+                <p>Enter your budget and preference</p>
+            </div>
+
+            <div class="card" onclick="window.location='{{ url_for('profile') }}'">
+                <div class="card-icon">👤</div>
+                <h3>My Profile</h3>
+                <p>Points, badges, and achievements</p>
+            </div>
+
+            <div class="card" onclick="window.location='{{ url_for('favorites') }}'">
+                <div class="card-icon">❤️</div>
+                <h3>Favorite Recipes</h3>
+                <p>View your saved recipes</p>
+            </div>
+
+            <div class="card" onclick="window.location='{{ url_for('cooking_history') }}'">
+                <div class="card-icon">📖</div>
+                <h3>Cooking History</h3>
+                <p>Recipes you have cooked</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

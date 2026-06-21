@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Get Recipes - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>🔍 Get Recipe Recommendations</h2>
+        <p>Enter your budget and preferences to get personalized Filipino recipes.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="form-card" style="max-width: 600px; margin-top: 24px;">
+            <form method="POST">
+
+                <label>Daily Food Budget (₱)</label>
+                <input type="number" name="budget" placeholder="e.g. 200" min="1" required>
+
+                <label>Preferred Dish, Ingredient, or Category</label>
+                <input type="text" name="preferred_dish" placeholder="e.g. Adobo, Chicken, Soup" required>
+
+                <label>Number of Household Members</label>
+                <input type="number" name="household_size" placeholder="e.g. 4" min="1" required>
+
+                <label>Meal Type (Optional)</label>
+                <select name="meal_type">
+                    <option value="Any">Any</option>
+                    <option value="Breakfast">Breakfast</option>
+                    <option value="Lunch">Lunch</option>
+                    <option value="Dinner">Dinner</option>
+                    <option value="Snack">Snack</option>
+                </select>
+
+                <button type="submit">🍳 Get Recommendations</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

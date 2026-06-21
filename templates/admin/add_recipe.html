@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Recipe - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag Admin</div>
+        <div class="nav-links">
+            <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('admin_recipes') }}">Recipes</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>➕ Add New Recipe</h2>
+
+        <div class="form-card" style="max-width: 700px; margin-top: 24px;">
+            <form method="POST">
+
+                <label>Recipe Name</label>
+                <input type="text" name="name" placeholder="e.g. Chicken Adobo" required>
+
+                <label>Description</label>
+                <textarea name="description" placeholder="Short description..." rows="3"
+                          style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:16px; font-size:1rem;"></textarea>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label>Servings</label>
+                        <input type="text" name="servings" placeholder="e.g. 4">
+                    </div>
+                    <div>
+                        <label>Estimated Total Cost</label>
+                        <input type="text" name="estimated_total_cost" placeholder="e.g. ₱200">
+                    </div>
+                    <div>
+                        <label>Prep Time</label>
+                        <input type="text" name="prep_time" placeholder="e.g. 15 mins">
+                    </div>
+                    <div>
+                        <label>Cook Time</label>
+                        <input type="text" name="cook_time" placeholder="e.g. 30 mins">
+                    </div>
+                </div>
+
+                <!-- INGREDIENTS -->
+                <h3 style="margin: 20px 0 12px;">🛒 Ingredients</h3>
+                <div id="ingredients-container">
+                    <div class="ingredient-row">
+                        <input type="text" name="ingredient_name" placeholder="Ingredient name">
+                        <input type="text" name="ingredient_quantity" placeholder="Quantity">
+                        <input type="text" name="ingredient_price" placeholder="Price e.g. ₱50">
+                    </div>
+                </div>
+                <button type="button" onclick="addIngredient()" class="btn-secondary"
+                        style="margin-bottom:20px;">
+                    ➕ Add Ingredient
+                </button>
+
+                <!-- INSTRUCTIONS -->
+                <label>Cooking Instructions (one step per line)</label>
+                <textarea name="instructions" placeholder="Step 1: Do this&#10;Step 2: Do that" rows="6"
+                          style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:16px; font-size:1rem;"></textarea>
+
+                          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+    <div>
+        <label>Category</label>
+        <select name="category">
+            <option value="Pork">Pork</option>
+            <option value="Chicken">Chicken</option>
+            <option value="Beef">Beef</option>
+            <option value="Seafood">Seafood</option>
+            <option value="Vegetable">Vegetable</option>
+            <option value="Soup">Soup</option>
+            <option value="Noodles">Noodles</option>
+            <option value="Snack">Snack</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+    <div>
+        <label>Tags (comma-separated)</label>
+        <input type="text" name="tags" placeholder="e.g. budget-friendly, spicy, quick">
+    </div>
+</div>
+
+                <label>Cooking Tips (optional)</label>
+                <input type="text" name="tips" placeholder="Any helpful tips...">
+
+                <button type="submit">💾 Save Recipe</button>
+                <a href="{{ url_for('admin_recipes') }}" class="btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function addIngredient() {
+            const container = document.getElementById('ingredients-container');
+            const row = document.createElement('div');
+            row.className = 'ingredient-row';
+            row.innerHTML = `
+                <input type="text" name="ingredient_name" placeholder="Ingredient name">
+                <input type="text" name="ingredient_quantity" placeholder="Quantity">
+                <input type="text" name="ingredient_price" placeholder="Price e.g. ₱50">
+            `;
+            container.appendChild(row);
+        }
+    </script>
+
+</body>
+</html>

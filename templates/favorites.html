@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Favorites - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>❤️ My Favorite Recipes</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        {% if favorites %}
+            <div class="recipe-grid" style="margin-top: 24px;">
+                {% for recipe_name in favorites %}
+                <div class="recipe-card">
+                    <div class="recipe-icon">🍲</div>
+                    <h3>{{ recipe_name }}</h3>
+                    <div style="display:flex; gap:10px; margin-top:16px;">
+                        <a href="{{ url_for('recipe_detail', recipe_name=recipe_name) }}"
+                           class="btn" style="flex:1; text-align:center;">
+                            View Recipe
+                        </a>
+                        <form method="POST"
+                              action="{{ url_for('toggle_favorite', recipe_name=recipe_name) }}">
+                            <button type="submit" class="btn-favorite">💔 Remove</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>💔 No favorite recipes yet.</p>
+                <p>Go find a recipe and save it!</p>
+                <a href="{{ url_for('recommend') }}" class="btn" style="margin-top:16px;">
+                    Find Recipes
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>

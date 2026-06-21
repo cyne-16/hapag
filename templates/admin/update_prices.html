@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update Ingredient Prices - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag Admin</div>
+        <div class="nav-links">
+            <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('admin_users') }}">Users</a>
+            <a href="{{ url_for('admin_recipes') }}">Recipes</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>💰 Update Ingredient Prices</h2>
+        <p style="color:#888; margin-bottom:8px;">{{ recipe.name }}</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="form-card" style="max-width: 600px; margin-top: 24px;">
+            <form method="POST">
+
+                {% for ingredient in recipe.ingredients %}
+                <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px; align-items:center; margin-bottom:12px;">
+                    <span>{{ ingredient.name }}</span>
+                    <span style="color:#888; font-size:0.9rem;">{{ ingredient.quantity }}</span>
+                    <input type="text" name="ingredient_price" value="{{ ingredient.estimated_price }}"
+                           style="margin-bottom:0;">
+                </div>
+                {% endfor %}
+
+                <div style="border-top:1px solid #eee; margin-top:16px; padding-top:16px;">
+                    <p style="color:#888; font-size:0.85rem; margin-bottom:16px;">
+                        💡 Total cost will be automatically recalculated based on the prices above.
+                    </p>
+                    <button type="submit">💾 Update Prices</button>
+                    <a href="{{ url_for('admin_recipes') }}" class="btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Profile - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>Edit Profile</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="form-card">
+            <form method="POST" enctype="multipart/form-data">
+
+    <label>Profile Picture</label>
+    <div style="text-align:center; margin-bottom:16px;">
+        {% if user.profile_picture %}
+            <img src="{{ user.profile_picture }}" alt="Profile"
+                 style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin-bottom:10px;">
+        {% else %}
+            <div style="font-size:4rem; margin-bottom:10px;">👤</div>
+        {% endif %}
+        <input type="file" name="profile_picture" accept="image/*">
+    </div>
+
+    <label>Username</label>
+    <input type="text" name="username" value="{{ user.username }}" required>
+
+    <label>Email (cannot be changed)</label>
+    <input type="email" value="{{ user.email }}" disabled>
+
+    <button type="submit">Save Changes</button>
+    <a href="{{ url_for('profile') }}" class="btn-secondary">Cancel</a>
+</form>
+        </div>
+    </div>
+
+</body>
+</html>

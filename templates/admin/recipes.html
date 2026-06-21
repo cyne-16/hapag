@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Recipes - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag Admin</div>
+        <div class="nav-links">
+            <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('admin_users') }}">Users</a>
+            <a href="{{ url_for('admin_recipes') }}">Recipes</a>
+            <a href="{{ url_for('dashboard') }}">Back to App</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>🍲 Manage Recipes</h2>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+    <a href="{{ url_for('admin_add_recipe') }}" class="btn">
+        ➕ Add New Recipe
+    </a>
+
+    <form method="GET" style="display:flex; gap:8px;">
+        <select name="category" onchange="this.form.submit()" style="padding:8px; border-radius:8px; border:1px solid #ddd;">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="recipe-section" style="margin-top: 24px;">
+            {% if recipes %}
+            <table class="ingredients-table">
+                <thead>
+                    <tr>
+                        <th>Recipe Name</th>
+                        <th>Category</th>
+                        <th>Servings</th>
+                        <th>Est. Cost</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for recipe in recipes %}
+                    <tr>
+                        <td>{{ recipe.name }}</td>
+                        <td>{{ recipe.category or "—" }}</td>
+                        <td>{{ recipe.servings }}</td>
+                        <td>{{ recipe.estimated_total_cost }}</td>
+                        <td style="display:flex; gap:8px;">
+    <a href="{{ url_for('admin_edit_recipe', recipe_id=recipe._id) }}"
+       class="btn" style="padding: 6px 14px; font-size:0.85rem;">
+        ✏️ Edit
+    </a>
+    <a href="{{ url_for('admin_update_prices', recipe_id=recipe._id) }}"
+       class="btn" style="padding: 6px 14px; font-size:0.85rem; background-color:#2e7d32;">
+        💰 Prices
+    </a>
+    <form method="POST"
+          action="{{ url_for('admin_delete_recipe', recipe_id=recipe._id) }}"
+          onsubmit="return confirm('Delete this recipe?')">
+        <button type="submit" class="btn-delete">🗑 Delete</button>
+    </form>
+</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p>No recipes in database yet. Add one!</p>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>
