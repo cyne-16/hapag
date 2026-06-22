@@ -1108,3 +1108,21 @@ p { margin-top: 16px; font-size: 0.9rem; }
     padding: 12px;
     font-size: 0.85rem;
 }
+/* ── HOUSEHOLD ── */
+.invite-code-box {
+    background: #fff3e0;
+    border: 1px solid #e05c00;
+    border-radius: 10px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    font-size: 0.95rem;
+}
+
+.invite-code-box strong {
+    font-size: 1.4rem;
+    letter-spacing: 4px;
+    color: #e05c00;
+}

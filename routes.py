@@ -1631,3 +1631,195 @@ def share_card(recipe_name):
                            cook_count=cook_count,
                            user=user_data,
                            recipe_name=recipe_name)
+import secrets
+
+# ─────────────────────────────────────────────
+# HOUSEHOLD GROUPS
+# ─────────────────────────────────────────────
+
+@app.route("/household")
+@login_required
+def household():
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+    household_id = user_data.get("household_id")
+
+    if not household_id:
+        return render_template("household.html", household=None, members=[], user=user_data)
+
+    household = db.households.find_one({"_id": ObjectId(household_id)})
+    if not household:
+        return render_template("household.html", household=None, members=[], user=user_data)
+
+    # Get all members
+    members = []
+    for member_id in household.get("members", []):
+        member = db.users.find_one({"_id": ObjectId(member_id)})
+        if member:
+            # Get this week's cooking activity
+            week_id = get_current_week_id()
+            week_points = sum(
+                log["points_earned"]
+                for log in db.points_log.find({
+                    "user_id": str(member["_id"]),
+                    "week_id": week_id
+                })
+            )
+            cooking_history = member.get("cooking_history", [])
+            recent_cook = cooking_history[-1]["name"] if cooking_history else "None yet"
+
+            members.append({
+                "id": str(member["_id"]),
+                "username": member["username"],
+                "points": member.get("points", 0),
+                "level": member.get("level", "Beginner Cook"),
+                "badges": member.get("badges", []),
+                "profile_picture": member.get("profile_picture", None),
+                "week_points": week_points,
+                "recent_cook": recent_cook,
+                "is_owner": str(member["_id"]) == household.get("owner_id"),
+                "is_me": str(member["_id"]) == current_user.id
+            })
+
+    # Sort by all-time points
+    members = sorted(members, key=lambda m: m["points"], reverse=True)
+
+    return render_template("household.html",
+                           household=household,
+                           members=members,
+                           user=user_data)
+
+
+@app.route("/household/create", methods=["POST"])
+@login_required
+def create_household():
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+
+    if user_data.get("household_id"):
+        flash("You are already in a household. Leave it first before creating a new one.", "danger")
+        return redirect(url_for("household"))
+
+    household_name = request.form.get("household_name", "").strip()
+    if not household_name:
+        flash("Please enter a household name.", "danger")
+        return redirect(url_for("household"))
+
+    # Generate a unique 6-character invite code
+    invite_code = secrets.token_hex(3).upper()
+
+    result = db.households.insert_one({
+        "name": household_name,
+        "owner_id": current_user.id,
+        "members": [current_user.id],
+        "invite_code": invite_code,
+        "created_at": datetime.now()
+    })
+
+    db.users.update_one(
+        {"_id": ObjectId(current_user.id)},
+        {"$set": {"household_id": str(result.inserted_id)}}
+    )
+
+    flash(f"Household '{household_name}' created! Invite code: {invite_code}", "success")
+    return redirect(url_for("household"))
+
+
+@app.route("/household/join", methods=["POST"])
+@login_required
+def join_household():
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+
+    if user_data.get("household_id"):
+        flash("You are already in a household. Leave it first before joining another.", "danger")
+        return redirect(url_for("household"))
+
+    invite_code = request.form.get("invite_code", "").strip().upper()
+    household = db.households.find_one({"invite_code": invite_code})
+
+    if not household:
+        flash("Invalid invite code. Please check and try again.", "danger")
+        return redirect(url_for("household"))
+
+    household_id = str(household["_id"])
+
+    db.households.update_one(
+        {"_id": household["_id"]},
+        {"$push": {"members": current_user.id}}
+    )
+
+    db.users.update_one(
+        {"_id": ObjectId(current_user.id)},
+        {"$set": {"household_id": household_id}}
+    )
+
+    flash(f"You joined '{household['name']}'! Welcome to the household!", "success")
+    log_activity("household_join", current_user.username, household["name"])
+    return redirect(url_for("household"))
+
+
+@app.route("/household/leave", methods=["POST"])
+@login_required
+def leave_household():
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+    household_id = user_data.get("household_id")
+
+    if not household_id:
+        flash("You are not in a household.", "danger")
+        return redirect(url_for("household"))
+
+    household = db.households.find_one({"_id": ObjectId(household_id)})
+
+    if household and household.get("owner_id") == current_user.id:
+        # Owner leaving — dissolve the household
+        for member_id in household.get("members", []):
+            db.users.update_one(
+                {"_id": ObjectId(member_id)},
+                {"$unset": {"household_id": ""}}
+            )
+        db.households.delete_one({"_id": ObjectId(household_id)})
+        flash("You dissolved the household since you were the owner.", "success")
+    else:
+        # Regular member leaving
+        db.households.update_one(
+            {"_id": ObjectId(household_id)},
+            {"$pull": {"members": current_user.id}}
+        )
+        db.users.update_one(
+            {"_id": ObjectId(current_user.id)},
+            {"$unset": {"household_id": ""}}
+        )
+        flash("You left the household.", "success")
+
+    return redirect(url_for("household"))
+
+
+@app.route("/household/kick/<member_id>", methods=["POST"])
+@login_required
+def kick_member(member_id):
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+    household_id = user_data.get("household_id")
+
+    if not household_id:
+        flash("You are not in a household.", "danger")
+        return redirect(url_for("household"))
+
+    household = db.households.find_one({"_id": ObjectId(household_id)})
+
+    if household.get("owner_id") != current_user.id:
+        flash("Only the household owner can remove members.", "danger")
+        return redirect(url_for("household"))
+
+    if member_id == current_user.id:
+        flash("You cannot remove yourself. Leave the household instead.", "danger")
+        return redirect(url_for("household"))
+
+    db.households.update_one(
+        {"_id": ObjectId(household_id)},
+        {"$pull": {"members": member_id}}
+    )
+    db.users.update_one(
+        {"_id": ObjectId(member_id)},
+        {"$unset": {"household_id": ""}}
+    )
+
+    flash("Member removed from household.", "success")
+    return redirect(url_for("household"))
