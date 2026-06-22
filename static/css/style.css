@@ -756,3 +756,355 @@ p { margin-top: 16px; font-size: 0.9rem; }
     color: #999;
     margin-bottom: 14px;
 }
+/* ── LEADERBOARD ── */
+.your-rank-banner {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+}
+
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.leaderboard-row {
+    display: grid;
+    grid-template-columns: 50px 1fr auto;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.leaderboard-you {
+    background: #fff8e1;
+    border-radius: 8px;
+}
+
+.leaderboard-rank {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #888;
+}
+
+.leaderboard-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.you-tag {
+    background: #e05c00;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 8px;
+}
+
+.leaderboard-points {
+    font-weight: 700;
+    color: #e05c00;
+}
+
+/* ── COOKBOOK COLLECTION ── */
+.cookbook-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+}
+
+.cookbook-card {
+    background: white;
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border: 2px solid #fff3e0;
+    transition: transform 0.2s;
+}
+
+.cookbook-card:hover {
+    transform: translateY(-3px);
+}
+
+.cookbook-locked {
+    background: #f5f5f5;
+    border-color: #e0e0e0;
+    opacity: 0.7;
+}
+
+.cookbook-icon {
+    font-size: 2.2rem;
+    margin-bottom: 8px;
+}
+
+.cookbook-card h4 {
+    color: #333;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    min-height: 2.2em;
+}
+
+.cookbook-locked h4 {
+    color: #aaa;
+}
+
+.cookbook-category {
+    display: inline-block;
+    background: #fff3e0;
+    color: #e05c00;
+    font-size: 0.7rem;
+    padding: 2px 10px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+}
+
+.cookbook-locked .cookbook-category {
+    background: #eee;
+    color: #999;
+}
+
+.cookbook-stat {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 600;
+}
+
+.cookbook-date {
+    font-size: 0.7rem;
+    color: #aaa;
+    margin-top: 2px;
+}
+
+/* ── COOKBOOK CELEBRATION ── */
+.celebration-banner {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border: 2px solid #e05c00;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    margin-top: 20px;
+    animation: celebrationPulse 2s ease-in-out infinite;
+}
+
+@keyframes celebrationPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+.celebration-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.celebration-banner h2 {
+    color: #e05c00;
+    margin-bottom: 8px;
+}
+
+.celebration-banner p {
+    color: #7a4a00;
+}
+
+.progress-fill-complete {
+    background: linear-gradient(90deg, #e05c00, #ffa726, #e05c00);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+/* ── MYSTERY BONUS POPUP ── */
+.mystery-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.mystery-popup {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    max-width: 380px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.mystery-jackpot {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border: 3px solid #e05c00;
+}
+
+.mystery-icon {
+    font-size: 4rem;
+    margin-bottom: 12px;
+}
+
+.mystery-popup h2 {
+    color: #e05c00;
+    margin-bottom: 8px;
+    font-size: 1.6rem;
+}
+
+.mystery-popup p {
+    color: #666;
+    margin-bottom: 16px;
+}
+
+.mystery-points {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #2e7d32;
+    background: #f1f8f2;
+    padding: 12px 24px;
+    border-radius: 12px;
+}
+/* ── SHARE CARD ── */
+.share-card-container {
+    background: linear-gradient(135deg, #fff8f0, #ffe0b2);
+    border-radius: 20px;
+    overflow: hidden;
+    max-width: 420px;
+    margin: 24px auto;
+    box-shadow: 0 8px 32px rgba(224,92,0,0.2);
+    border: 2px solid #e05c00;
+}
+
+.share-card-header {
+    background: #e05c00;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.share-card-logo {
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+
+.share-card-tagline {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.8rem;
+}
+
+.share-card-body {
+    padding: 28px 24px;
+    text-align: center;
+}
+
+.share-card-dish-icon {
+    font-size: 4rem;
+    margin-bottom: 10px;
+}
+
+.share-card-recipe-name {
+    color: #333;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
+
+.share-card-category {
+    display: inline-block;
+    background: #fff3e0;
+    color: #e05c00;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.share-card-stats {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.share-card-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.share-stat-number {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #e05c00;
+}
+
+.share-stat-label {
+    font-size: 0.7rem;
+    color: #888;
+    text-align: center;
+}
+
+.share-card-stat-divider {
+    width: 1px;
+    height: 40px;
+    background: #eee;
+}
+
+.share-card-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: center;
+}
+
+.share-card-avatar {
+    font-size: 2.5rem;
+}
+
+.share-card-username {
+    font-weight: 700;
+    color: #333;
+    font-size: 1rem;
+    text-align: left;
+}
+
+.share-card-level {
+    color: #e05c00;
+    font-size: 0.85rem;
+    text-align: left;
+}
+
+.share-card-footer {
+    background: #e05c00;
+    color: white;
+    text-align: center;
+    padding: 12px;
+    font-size: 0.85rem;
+}

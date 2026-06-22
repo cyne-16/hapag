@@ -14,6 +14,8 @@
             <a href="{{ url_for('dashboard') }}">Home</a>
             <a href="{{ url_for('recommend') }}">Get Recipes</a>
             <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
             <a href="{{ url_for('profile') }}">Profile</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
@@ -49,10 +51,22 @@
             </div>
 
             <div class="card" onclick="window.location='{{ url_for('challenges') }}'">
-    <div class="card-icon">🎯</div>
-    <h3>Weekly Challenges</h3>
-    <p>Complete challenges for bonus points</p>
-</div>
+                <div class="card-icon">🎯</div>
+                <h3>Weekly Challenges</h3>
+                <p>Complete challenges for bonus points</p>
+            </div>
+
+            <div class="card" onclick="window.location='{{ url_for('leaderboard') }}'">
+                <div class="card-icon">🏆</div>
+                <h3>Leaderboard</h3>
+                <p>See how you rank against other cooks</p>
+            </div>
+
+            <div class="card" onclick="window.location='{{ url_for('cookbook') }}'">
+                <div class="card-icon">📖</div>
+                <h3>My Cookbook</h3>
+                <p>Collect every Filipino dish you've cooked</p>
+            </div>
         </div>
     </div>
 

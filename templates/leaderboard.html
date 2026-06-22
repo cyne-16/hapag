@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Leaderboard - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>🏆 Leaderboard</h2>
+
+        <!-- TOGGLE -->
+        <div style="display:flex; gap:10px; margin: 20px 0;">
+            <a href="{{ url_for('leaderboard', view='weekly') }}"
+               class="{{ 'btn' if view == 'weekly' else 'btn-secondary' }}">
+                📅 This Week
+            </a>
+            <a href="{{ url_for('leaderboard', view='alltime') }}"
+               class="{{ 'btn' if view == 'alltime' else 'btn-secondary' }}">
+                ⭐ All-Time
+            </a>
+        </div>
+
+        {% if user_rank %}
+        <div class="your-rank-banner">
+            Your Rank: <strong>#{{ user_rank }}</strong> with {{ user_points }} points
+            {% if view == "weekly" %}this week{% endif %}
+        </div>
+        {% else %}
+        <div class="your-rank-banner" style="background:#fff3e0; color:#7a6000;">
+            You're not in the top 20 yet — keep cooking to climb the ranks!
+        </div>
+        {% endif %}
+
+        <div class="recipe-section" style="margin-top:20px;">
+            {% if rankings %}
+            <div class="leaderboard-list">
+                {% for entry in rankings %}
+                <div class="leaderboard-row {% if entry._id == current_username %}leaderboard-you{% endif %}">
+                    <div class="leaderboard-rank">
+                        {% if loop.index == 1 %}🥇
+                        {% elif loop.index == 2 %}🥈
+                        {% elif loop.index == 3 %}🥉
+                        {% else %}#{{ loop.index }}{% endif %}
+                    </div>
+                    <div class="leaderboard-name">
+                        {{ entry._id }}
+                        {% if entry._id == current_username %}<span class="you-tag">You</span>{% endif %}
+                    </div>
+                    <div class="leaderboard-points">{{ entry.total_points }} pts</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No rankings yet. Be the first to cook and earn points!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>

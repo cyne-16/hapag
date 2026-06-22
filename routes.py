@@ -673,11 +673,15 @@ Respond ONLY in this exact JSON format, no extra text:
                 {"$inc": {"view_count": 1}}
             )
 
+    # Check if there's a mystery bonus to display, then clear it (one-time popup)
+    mystery_bonus = session.pop("mystery_bonus", None)
+
     return render_template("recipe_detail.html",
                            recipe=recipe,
                            source=source,
                            recipe_name=recipe_name,
-                           household_size=household_size)
+                           household_size=household_size,
+                           mystery_bonus=mystery_bonus)
 # ─────────────────────────────────────────────
 # MARK RECIPE AS COOKED
 # ─────────────────────────────────────────────
@@ -706,8 +710,29 @@ def mark_cooked(recipe_name):
     log_activity("cooked", current_user.username, recipe_name)
 
     # Award points
+    # Award points
     points_earned = 15 if is_first_time else 10
-    new_points = user_data.get("points", 0) + points_earned
+
+    # ── MYSTERY BONUS ── 15% chance of a surprise bonus
+    bonus_triggered = False
+    bonus_amount = 0
+    bonus_type = ""
+
+    roll = random.randint(1, 100)
+
+    if roll <= 5:
+        # Rare: Jackpot! (5% chance)
+        bonus_amount = points_earned * 2
+        bonus_type = "jackpot"
+        bonus_triggered = True
+    elif roll <= 15:
+        # Common: Small bonus (10% chance)
+        bonus_amount = random.randint(5, 15)
+        bonus_type = "small"
+        bonus_triggered = True
+
+    total_points_earned = points_earned + bonus_amount
+    new_points = user_data.get("points", 0) + total_points_earned
 
     # Update level based on points
     if new_points >= 600:
@@ -753,7 +778,28 @@ def mark_cooked(recipe_name):
         }}
     )
 
-    flash(f"✅ Great job! You earned {points_earned} points!", "success")
+   # Log points earned for leaderboard tracking
+    db.points_log.insert_one({
+        "user_id": str(current_user.id),
+        "username": current_user.username,
+        "points_earned": total_points_earned,
+        "reason": f"Cooked {recipe_name}" + (" (+ Mystery Bonus!)" if bonus_triggered else ""),
+        "date": datetime.now(),
+        "week_id": get_current_week_id()
+    })
+
+    # Store the mystery bonus result in session so the detail page can show a popup
+    if bonus_triggered:
+        session["mystery_bonus"] = {
+            "type": bonus_type,
+            "amount": bonus_amount,
+            "base_points": points_earned
+        }
+        flash(f"✅ You earned {points_earned} points!", "success")
+    else:
+        session.pop("mystery_bonus", None)
+        flash(f"✅ Great job! You earned {points_earned} points!", "success")
+
     return redirect(url_for("recipe_detail", recipe_name=recipe_name))
 
 # ─────────────────────────────────────────────
@@ -1413,6 +1459,175 @@ def claim_challenge(claim_key):
             "$push": {"claimed_challenges": claim_key}
         }
     )
+    db.points_log.insert_one({
+        "user_id": str(current_user.id),
+        "username": current_user.username,
+        "points_earned": matched_challenge["points"],
+        "reason": f"Challenge: {matched_challenge['title']}",
+        "date": datetime.now(),
+        "week_id": get_current_week_id()
+    })
 
     flash(f"🎉 Challenge complete! You earned {matched_challenge['points']} bonus points!", "success")
     return redirect(url_for("challenges"))
+
+# ─────────────────────────────────────────────
+# LEADERBOARDS
+# ─────────────────────────────────────────────
+
+@app.route("/leaderboard")
+@login_required
+def leaderboard():
+    view = request.args.get("view", "weekly")
+
+    if view == "weekly":
+        week_id = get_current_week_id()
+
+        pipeline = [
+            {"$match": {"week_id": week_id}},
+            {"$group": {"_id": "$username", "total_points": {"$sum": "$points_earned"}}},
+            {"$sort": {"total_points": -1}},
+            {"$limit": 20}
+        ]
+        rankings = list(db.points_log.aggregate(pipeline))
+
+    else:  # all-time
+        all_users = list(db.users.find({}, {"username": 1, "points": 1, "level": 1, "profile_picture": 1}))
+        all_users_sorted = sorted(all_users, key=lambda u: u.get("points", 0), reverse=True)[:20]
+        rankings = [{"_id": u["username"], "total_points": u.get("points", 0)} for u in all_users_sorted]
+
+    # Find current user's rank (even if outside top 20)
+    user_rank = None
+    user_points = 0
+
+    for i, r in enumerate(rankings):
+        if r["_id"] == current_user.username:
+            user_rank = i + 1
+            user_points = r["total_points"]
+            break
+
+    return render_template("leaderboard.html",
+                           rankings=rankings,
+                           view=view,
+                           user_rank=user_rank,
+                           current_username=current_user.username)
+
+# ─────────────────────────────────────────────
+# RECIPE COLLECTION / COOKBOOK
+# ─────────────────────────────────────────────
+
+@app.route("/cookbook")
+@login_required
+def cookbook():
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+    cooking_history = user_data.get("cooking_history", [])
+
+    # Get unique cooked recipe names (case-insensitive)
+    cooked_names_lower = set(entry["name"].lower() for entry in cooking_history)
+
+    # Build a lookup of cook count and first-cooked date per recipe
+    cook_stats = {}
+    for entry in cooking_history:
+        key = entry["name"].lower()
+        if key not in cook_stats:
+            cook_stats[key] = {"count": 0, "first_date": entry["date"], "name": entry["name"]}
+        cook_stats[key]["count"] += 1
+
+    # Get all known recipes from the database (the "collectible" pool)
+    all_db_recipes = list(db.recipes.find())
+
+    collection = []
+    seen_names = set()
+
+    for recipe in all_db_recipes:
+        name_lower = recipe["name"].lower()
+        seen_names.add(name_lower)
+
+        if name_lower in cook_stats:
+            collection.append({
+                "name": recipe["name"],
+                "category": recipe.get("category", "Other"),
+                "unlocked": True,
+                "cook_count": cook_stats[name_lower]["count"],
+                "first_cooked": cook_stats[name_lower]["first_date"]
+            })
+        else:
+            collection.append({
+                "name": recipe["name"],
+                "category": recipe.get("category", "Other"),
+                "unlocked": False,
+                "cook_count": 0,
+                "first_cooked": None
+            })
+
+    # Add any cooked recipes that came from AI (not in the recipes collection at all)
+    for key, stats in cook_stats.items():
+        if key not in seen_names:
+            collection.append({
+                "name": stats["name"],
+                "category": "AI Discovery",
+                "unlocked": True,
+                "cook_count": stats["count"],
+                "first_cooked": stats["first_date"]
+            })
+
+    # Sort: unlocked first, then alphabetically
+    collection = sorted(collection, key=lambda c: (not c["unlocked"], c["name"]))
+
+    total_count = len(collection)
+    unlocked_count = sum(1 for c in collection if c["unlocked"])
+    completion_pct = int((unlocked_count / total_count * 100)) if total_count > 0 else 0
+
+    is_complete = total_count > 0 and unlocked_count == total_count
+
+    # Award the Master Collector badge if fully complete and not already awarded
+    if is_complete:
+        user_data_check = db.users.find_one({"_id": ObjectId(current_user.id)})
+        current_badges = user_data_check.get("badges", [])
+        if "📚 Master Collector" not in current_badges:
+            current_badges.append("📚 Master Collector")
+            db.users.update_one(
+                {"_id": ObjectId(current_user.id)},
+                {"$set": {"badges": current_badges}}
+            )
+            flash("🎉🎉 INCREDIBLE! You've collected EVERY recipe! Badge Unlocked: Master Collector!", "success")
+
+    # Group by category for filtering
+    categories = sorted(set(c["category"] for c in collection))
+
+    return render_template("cookbook.html",
+                           collection=collection,
+                           total_count=total_count,
+                           unlocked_count=unlocked_count,
+                           completion_pct=completion_pct,
+                           categories=categories,
+                           is_complete=is_complete)
+# ─────────────────────────────────────────────
+# RECIPE SHARE CARD
+# ─────────────────────────────────────────────
+
+@app.route("/share/<recipe_name>")
+@login_required
+def share_card(recipe_name):
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+    cooking_history = user_data.get("cooking_history", [])
+
+    # Count how many times this user has cooked this recipe
+    cook_count = sum(1 for h in cooking_history if h["name"].lower() == recipe_name.lower())
+
+    if cook_count == 0:
+        flash("You haven't cooked this recipe yet!", "danger")
+        return redirect(url_for("recipe_detail", recipe_name=recipe_name))
+
+    # Get recipe details
+    recipe = db.recipes.find_one({"name": {"$regex": f"^{recipe_name}$", "$options": "i"}})
+
+    # If not in DB, try to get basic info from cooking history
+    if not recipe:
+        recipe = {"name": recipe_name, "estimated_total_cost": "N/A", "category": ""}
+
+    return render_template("share_card.html",
+                           recipe=recipe,
+                           cook_count=cook_count,
+                           user=user_data,
+                           recipe_name=recipe_name)

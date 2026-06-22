@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Cookbook - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>📖 My Cookbook Collection</h2>
+        <p style="color:#888; margin-top:6px;">
+            Collect every Filipino dish by cooking it at least once!
+        </p>
+
+        <!-- COMPLETION PROGRESS -->
+        {% if is_complete %}
+<!-- CELEBRATION BANNER -->
+    <div class="celebration-banner">
+        <div class="celebration-icon">🏆🎉🏆</div>
+        <h2>Collection Complete!</h2>
+        <p>You've cooked every single recipe in Hapag. You're a true Master Collector!</p>
+    </div>
+    {% endif %}
+
+<!-- COMPLETION PROGRESS -->
+    <div class="progress-section" style="margin-top:20px;">
+        <h3>Collection Progress</h3>
+        <p>{{ unlocked_count }} / {{ total_count }} recipes unlocked ({{ completion_pct }}%)</p>
+        <div class="progress-bar">
+        <div class="progress-fill {% if is_complete %}progress-fill-complete{% endif %}" style="width: {{ completion_pct }}%"></div>
+    </div>
+</div>
+
+        <!-- CATEGORY FILTER -->
+        <div style="margin: 20px 0;">
+            <select id="categoryFilter" onchange="filterByCategory()"
+                    style="padding:10px; border-radius:8px; border:1px solid #ddd; font-size:0.9rem;">
+                <option value="all">All Categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- COLLECTION GRID -->
+        <div class="cookbook-grid" id="cookbookGrid">
+            {% for item in collection %}
+            <div class="cookbook-card {% if not item.unlocked %}cookbook-locked{% endif %}"
+                 data-category="{{ item.category }}">
+                <div class="cookbook-icon">
+                    {% if item.unlocked %}🍲{% else %}🔒{% endif %}
+                </div>
+                <h4>{% if item.unlocked %}{{ item.name }}{% else %}???{% endif %}</h4>
+                <span class="cookbook-category">{{ item.category }}</span>
+                {% if item.unlocked %}
+                    <p class="cookbook-stat">Cooked {{ item.cook_count }}x</p>
+                    <p class="cookbook-date">Since {{ item.first_cooked.split(' ')[0] if item.first_cooked else '' }}</p>
+                {% else %}
+                    <p class="cookbook-stat" style="color:#bbb;">Not yet discovered</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function filterByCategory() {
+            const selected = document.getElementById('categoryFilter').value;
+            const cards = document.querySelectorAll('.cookbook-card');
+
+            cards.forEach(card => {
+                if (selected === 'all' || card.getAttribute('data-category') === selected) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

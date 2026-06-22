@@ -7,6 +7,27 @@
 </head>
 <body>
 
+    {% if mystery_bonus %}
+    <div id="mysteryBonusOverlay" class="mystery-overlay">
+        <div class="mystery-popup {% if mystery_bonus.type == 'jackpot' %}mystery-jackpot{% endif %}">
+            {% if mystery_bonus.type == "jackpot" %}
+                <div class="mystery-icon">🎰</div>
+                <h2>JACKPOT!</h2>
+                <p>Lucky you! Your points were doubled!</p>
+                <div class="mystery-points">+{{ mystery_bonus.amount }} bonus points!</div>
+            {% else %}
+                <div class="mystery-icon">🎁</div>
+                <h2>Surprise Bonus!</h2>
+                <p>You found a mystery reward while cooking!</p>
+                <div class="mystery-points">+{{ mystery_bonus.amount }} bonus points!</div>
+            {% endif %}
+            <button onclick="closeMysteryBonus()" class="btn" style="margin-top:16px;">
+                Awesome! 🎉
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
     <nav class="navbar">
         <div class="nav-brand">🍽️ Hapag</div>
         <div class="nav-links">
@@ -134,34 +155,39 @@
         </div>
 
         <!-- ACTION BUTTONS -->
-        <div class="recipe-actions">
+        <!-- ACTION BUTTONS -->
+<div class="recipe-actions">
+    <!-- MARK AS COOKED -->
+    <form method="POST"
+          action="{{ url_for('mark_cooked', recipe_name=recipe.name) }}"
+          style="display:inline;">
+        <button type="submit" class="btn-cooked">
+            ✅ Mark as Cooked (+Points)
+        </button>
+    </form>
 
-            <!-- MARK AS COOKED -->
-            <form method="POST" 
-                  action="{{ url_for('mark_cooked', recipe_name=recipe.name) }}"
-                  style="display:inline;">
-                <button type="submit" class="btn-cooked">
-                    ✅ Mark as Cooked (+Points)
-                </button>
-            </form>
+    <!-- SAVE TO FAVORITES -->
+    <form method="POST"
+          action="{{ url_for('toggle_favorite', recipe_name=recipe.name) }}"
+          style="display:inline;">
+        {% if recipe.name in current_user.favorites %}
+            <button type="submit" class="btn-favorite">💔 Remove from Favorites</button>
+        {% else %}
+            <button type="submit" class="btn-favorite">❤️ Save to Favorites</button>
+        {% endif %}
+    </form>
 
-            <!-- SAVE TO FAVORITES -->
-            <form method="POST"
-      action="{{ url_for('toggle_favorite', recipe_name=recipe.name) }}"
-      style="display:inline;">
-    {% if recipe.name in current_user.favorites %}
-        <button type="submit" class="btn-favorite">💔 Remove from Favorites</button>
-    {% else %}
-        <button type="submit" class="btn-favorite">❤️ Save to Favorites</button>
-    {% endif %}
-</form>
+    <!-- SHARE CARD -->
+    <a href="{{ url_for('share_card', recipe_name=recipe.name) }}"
+       class="btn" style="background-color:#7b1fa2;">
+        📤 Share Achievement
+    </a>
 
-            <!-- BACK BUTTON -->
-            <a href="{{ url_for('recommend') }}" class="btn-secondary">
-                🔄 Find More Recipes
-            </a>
-
-        </div>
+    <!-- BACK BUTTON -->
+    <a href="{{ url_for('recommend') }}" class="btn-secondary">
+        🔄 Find More Recipes
+    </a>
+</div>
 
     </div>
 
@@ -197,6 +223,14 @@ window.addEventListener('DOMContentLoaded', recalculateCosts);
 
         document.getElementById('tableTotalCost').textContent = `₱${total}`;
         document.getElementById('totalCostDisplay').textContent = `💰 ₱${total}`;
+    }
+</script>
+<script>
+    function closeMysteryBonus() {
+        const overlay = document.getElementById('mysteryBonusOverlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
     }
 </script>
 

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Share Card - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2>📤 Share Your Achievement</h2>
+        <p style="color:#888; margin-top:6px;">
+            Download this card and share it with your family and friends!
+        </p>
+
+        <!-- THE SHARE CARD (this is what gets captured) -->
+        <div id="shareCard" class="share-card-container">
+            <div class="share-card-header">
+                <div class="share-card-logo">🍽️ Hapag</div>
+                <div class="share-card-tagline">Filipino Recipe System</div>
+            </div>
+
+            <div class="share-card-body">
+                <div class="share-card-dish-icon">🍲</div>
+                <h2 class="share-card-recipe-name">{{ recipe_name }}</h2>
+
+                {% if recipe.category %}
+                <span class="share-card-category">{{ recipe.category }}</span>
+                {% endif %}
+
+                <div class="share-card-stats">
+                    <div class="share-card-stat">
+                        <span class="share-stat-number">{{ cook_count }}</span>
+                        <span class="share-stat-label">Times Cooked</span>
+                    </div>
+                    <div class="share-card-stat-divider"></div>
+                    <div class="share-card-stat">
+                        <span class="share-stat-number">{{ user.points }}</span>
+                        <span class="share-stat-label">Total Points</span>
+                    </div>
+                    <div class="share-card-stat-divider"></div>
+                    <div class="share-card-stat">
+                        <span class="share-stat-number">{{ user.badges | length }}</span>
+                        <span class="share-stat-label">Badges</span>
+                    </div>
+                </div>
+
+                <div class="share-card-user-info">
+                    <div class="share-card-avatar">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture }}"
+                                 style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                        {% else %}
+                            👤
+                        {% endif %}
+                    </div>
+                    <div>
+                        <p class="share-card-username">{{ user.username }}</p>
+                        <p class="share-card-level">{{ user.level }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="share-card-footer">
+                🍳 Cooking smarter with Hapag
+            </div>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="recipe-actions" style="margin-top:24px;">
+            <button onclick="downloadCard()" class="btn-cooked">
+                ⬇️ Download Card
+            </button>
+            <a href="{{ url_for('recipe_detail', recipe_name=recipe_name) }}"
+               class="btn-secondary">
+                ← Back to Recipe
+            </a>
+        </div>
+
+        <p style="font-size:0.8rem; color:#999; margin-top:12px;">
+            💡 Tip: Screenshot the card above to share directly in group chats!
+        </p>
+    </div>
+
+    <script>
+        function downloadCard() {
+            const card = document.getElementById('shareCard');
+            html2canvas(card, {
+                scale: 2,
+                backgroundColor: '#fff8f0',
+                useCORS: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'hapag-{{ recipe_name | replace(" ", "-") }}.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    </script>
+
+</body>
+</html>
