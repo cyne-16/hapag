@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ household.name }} - Hapag</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.5rem; color: var(--gold);
+            text-shadow: 0 0 18px rgba(245,166,35,.5);
+            display: flex; align-items: center; gap: .4rem;
+        }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .78rem; font-weight: 700;
+            padding: .35rem .75rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+
+        .nav-links a:hover  { color: var(--cream); background: var(--panel); }
+        .nav-links a:last-child { color: var(--orange); border: 1px solid rgba(255,107,53,.3); }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+        /* ── BACK LINK ── */
+        .back-link {
+            color: var(--gold); font-size: .85rem; font-weight: 700;
+            text-decoration: none; display: inline-block;
+        }
+        .back-link:hover { color: var(--orange); }
+
+        /* ── FLASH ── */
+        .alert {
+            border-radius: 10px; padding: .7rem 1rem;
+            font-size: .82rem; font-weight: 700;
+            margin-bottom: 1.2rem; border: 1px solid transparent;
+        }
+        .alert.error,.alert.danger { background:rgba(255,107,53,.12); border-color:rgba(255,107,53,.35); color:var(--orange); }
+        .alert.success { background:rgba(46,204,113,.1); border-color:rgba(46,204,113,.3); color:var(--jade); }
+        .alert.info    { background:rgba(56,189,248,.1); border-color:rgba(56,189,248,.3); color:var(--sky); }
+
+        /* ── HOUSEHOLD HEADER CARD ── */
+        .profile-card {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.8rem;
+            text-align: center;
+            position: relative; overflow: hidden;
+        }
+
+        .profile-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--orange));
+            border-radius: 16px 16px 0 0;
+        }
+
+        .profile-card h2 {
+            font-family: var(--font-display);
+            font-size: 1.6rem; color: var(--cream);
+            margin-top: .4rem;
+        }
+
+        .profile-card p { font-size: .85rem; color: var(--muted); font-weight: 600; margin-top: .3rem; }
+
+        .badge-item {
+            display: inline-block;
+            background: rgba(46,204,113,.1);
+            border: 1px solid rgba(46,204,113,.3);
+            color: var(--jade);
+            font-size: .78rem; font-weight: 800;
+            border-radius: 99px; padding: .3rem .85rem;
+        }
+
+        /* ── TWO COLUMN GRID ── */
+        .split-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+            margin-top: 1.2rem;
+        }
+
+        /* ── SECTION CARD ── */
+        .recipe-section {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.4rem;
+            position: relative; overflow: hidden;
+        }
+
+        .recipe-section::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--rs-accent, var(--sky));
+            border-radius: 16px 16px 0 0;
+        }
+
+        .split-grid .recipe-section:nth-child(1) { --rs-accent: var(--gold); }
+        .split-grid .recipe-section:nth-child(2) { --rs-accent: var(--sky); }
+
+        .recipe-section h3 {
+            font-family: var(--font-display);
+            font-size: 1.1rem; color: var(--cream);
+        }
+
+        /* ── LEADERBOARD ROWS ── */
+        .leaderboard-list { display: flex; flex-direction: column; gap: .55rem; }
+
+        .leaderboard-row {
+            display: flex; align-items: center; gap: .8rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: .7rem .9rem;
+            transition: border-color .2s;
+        }
+
+        .leaderboard-row.leaderboard-you { border-color: rgba(46,204,113,.4); background: rgba(46,204,113,.06); }
+
+        .leaderboard-rank {
+            font-size: 1rem; font-weight: 800; color: var(--muted);
+            width: 28px; text-align: center; flex-shrink: 0;
+        }
+
+        .leaderboard-name {
+            font-size: .87rem; font-weight: 800; color: var(--cream);
+            display: flex; align-items: center; flex-wrap: wrap; gap: .3rem;
+        }
+
+        .you-tag {
+            font-size: .65rem; font-weight: 800;
+            background: var(--jade); color: var(--night);
+            border-radius: 99px; padding: .1rem .5rem;
+            text-transform: uppercase; letter-spacing: .03em;
+        }
+
+        .leaderboard-points { font-size: .9rem; font-weight: 800; color: var(--gold); }
+
+        /* ── RECENT ACTIVITY ITEM ── */
+        .recent-post-item {
+            padding: .7rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .recent-post-item:last-child { border-bottom: none; }
+
+        .recent-post-item strong { font-size: .87rem; color: var(--cream); }
+
+        .recent-post-item p {
+            font-size: .82rem; color: var(--muted); font-weight: 600;
+            margin-top: .3rem; line-height: 1.4;
+        }
+
+        .recent-post-item span { font-size: .72rem; color: var(--muted); font-weight: 600; }
+
+        /* ── FULL FEED WRAPPER ── */
+        .feed-section {
+            margin-top: 1.2rem;
+        }
+
+        .feed-section::before { background: linear-gradient(90deg, var(--jade), var(--sky)); }
+
+        .community-feed { display: flex; flex-direction: column; gap: 1rem; }
+
+        /* ── POST CARD ── */
+        .community-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px; padding: 1.1rem;
+        }
+
+        .community-author {
+            display: flex; align-items: center; gap: .75rem;
+            margin-bottom: .85rem;
+        }
+
+        .community-avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            overflow: hidden; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--deep); border: 2px solid var(--border);
+        }
+
+        .community-avatar-placeholder { font-size: 1.3rem; }
+
+        .community-author-info {
+            flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+        }
+
+        .community-author-info strong { font-size: .88rem; color: var(--cream); }
+
+        .community-level { font-size: .68rem; font-weight: 800; color: var(--jade); letter-spacing: .05em; }
+
+        .community-time {
+            font-size: .7rem; color: var(--muted); font-weight: 600;
+            margin-left: auto; white-space: nowrap;
+        }
+
+        .community-content {
+            font-size: .87rem; font-weight: 600; color: var(--cream);
+            line-height: 1.55; margin-bottom: .85rem;
+        }
+
+        .community-recipe-link {
+            display: inline-flex; align-items: center; gap: .35rem;
+            background: rgba(245,166,35,.08);
+            border: 1px solid rgba(245,166,35,.25);
+            color: var(--gold); text-decoration: none;
+            border-radius: 8px; padding: .3rem .75rem;
+            font-size: .78rem; font-weight: 800;
+            margin-bottom: .85rem;
+            transition: background .2s;
+        }
+
+        .community-recipe-link:hover { background: rgba(245,166,35,.15); }
+
+        .community-actions {
+            display: flex; align-items: center; gap: .5rem;
+            padding-top: .75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .community-action-btn {
+            display: inline-flex; align-items: center; gap: .3rem;
+            background: var(--deep);
+            border: 1px solid var(--border);
+            color: var(--muted); border-radius: 8px;
+            padding: .35rem .75rem;
+            font-family: var(--font-body);
+            font-size: .78rem; font-weight: 800;
+            cursor: pointer; text-decoration: none;
+            transition: border-color .2s, color .2s, background .2s;
+        }
+
+        .community-action-btn:hover { border-color: var(--gold); color: var(--cream); }
+
+        .community-action-btn.liked {
+            background: rgba(255,107,53,.1);
+            border-color: rgba(255,107,53,.35);
+            color: var(--orange);
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px; padding: 2rem;
+            text-align: center; margin-top: 12px;
+        }
+
+        .empty-state p { font-size: .85rem; color: var(--muted); font-weight: 600; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 720px) {
+            .split-grid { grid-template-columns: 1fr; }
+            .main-container { padding: 1.5rem 1rem 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">
+    <img src="{{ url_for('static', filename='images/icon.png') }}"
+         alt="Hapag"
+         style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;">
+    Hapag
+</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Recipes</a>
+            <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('community') }}">Community</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <a href="{{ url_for('households_directory') }}" class="back-link">← Back to Households</a>
+
+        <!-- HOUSEHOLD HEADER -->
+        <div class="profile-card" style="margin-top:16px;">
+            <div style="font-size:3rem;">🏠</div>
+            <h2>{{ household.name }}</h2>
+            <p>{{ members | length }} members</p>
+            {% if is_member %}
+                <span class="badge-item" style="margin-top:8px;">✅ You're a member</span>
+            {% endif %}
+        </div>
+
+        <div class="split-grid">
+
+            <!-- MEMBERS LEADERBOARD -->
+            <div class="recipe-section">
+                <h3>🏆 Member Rankings</h3>
+                <div class="leaderboard-list" style="margin-top:12px;">
+                    {% for member in members %}
+                    <div class="leaderboard-row {% if member.username == current_username %}leaderboard-you{% endif %}">
+                        <div class="leaderboard-rank">
+                            {% if loop.index == 1 %}🥇
+                            {% elif loop.index == 2 %}🥈
+                            {% elif loop.index == 3 %}🥉
+                            {% else %}#{{ loop.index }}{% endif %}
+                        </div>
+                        <div style="flex:1;">
+                            <div class="leaderboard-name">
+                                {% if member.profile_picture %}
+                                    <img src="{{ member.profile_picture }}"
+                                         style="width:24px; height:24px; border-radius:50%; object-fit:cover; vertical-align:middle;">
+                                {% endif %}
+                                {{ member.username }}
+                                {% if member.username == current_username %}
+                                    <span class="you-tag">You</span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size:0.75rem; color:var(--muted); margin-top:2px; font-weight:600;">
+                                {{ member.level }} • Last: {{ member.recent_cook }}
+                            </div>
+                        </div>
+                        <div class="leaderboard-points">{{ member.points }} pts</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- RECENT ACTIVITY -->
+            <div class="recipe-section">
+                <h3>📖 Recent Posts</h3>
+                {% if posts %}
+                <div style="margin-top:12px;">
+                    {% for post in posts[:3] %}
+                    <div class="recent-post-item">
+                        <strong>{{ post.author_username }}</strong>
+                        <p>
+                            {{ post.content[:80] }}{% if post.content|length > 80 %}...{% endif %}
+                        </p>
+                        <span>{{ post.created_at }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color:var(--muted); margin-top:12px; font-size:.85rem; font-weight:600;">No posts yet.</p>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- FULL FEED -->
+        <div class="recipe-section feed-section">
+            <h3>📢 Household Feed</h3>
+            {% if posts %}
+            <div class="community-feed" style="margin-top:16px;">
+                {% for post in posts %}
+                <div class="community-card">
+                    <div class="community-author">
+                        <div class="community-avatar">
+                            {% if post.author_picture %}
+                                <img src="{{ post.author_picture }}"
+                                     style="width:42px; height:42px; border-radius:50%; object-fit:cover;">
+                            {% else %}
+                                <div class="community-avatar-placeholder">👤</div>
+                            {% endif %}
+                        </div>
+                        <div class="community-author-info">
+                            <strong>{{ post.author_username }}</strong>
+                            <span class="community-level">{{ post.author_level }}</span>
+                        </div>
+                        <span class="community-time">{{ post.created_at }}</span>
+                    </div>
+
+                    {% if post.content %}
+<p class="community-content">{{ post.content }}</p>
+{% endif %}
+
+{% if post.image %}
+<div style="margin-bottom:12px;">
+    <img src="{{ post.image }}"
+         style="width:100%; max-height:400px; object-fit:cover;
+                border-radius:10px; cursor:pointer;"
+         onclick="this.style.maxHeight = this.style.maxHeight === 'none' ? '400px' : 'none'">
+</div>
+{% endif %}
+
+{% if post.recipe_name %}
+<a href="{{ url_for('recipe_detail', recipe_name=post.recipe_name) }}"
+   class="community-recipe-link">
+    🍲 {{ post.recipe_name }}
+</a>
+{% endif %}
+
+                    <div class="community-actions">
+                        <form method="POST"
+                              action="{{ url_for('like_post', post_id=post.id) }}"
+                              style="display:inline;">
+                            <button type="submit"
+                                    class="community-action-btn {% if post.liked_by_me %}liked{% endif %}">
+                                ❤️ {{ post.likes }}
+                            </button>
+                        </form>
+
+                        <a href="{{ url_for('view_comments', post_id=post.id) }}"
+                           class="community-action-btn">
+                            💬 {{ post.comment_count }}
+                        </a>
+
+                        {% if post.is_mine %}
+                        <form method="POST"
+                              action="{{ url_for('delete_post', post_id=post.id) }}"
+                              style="display:inline;"
+                              onsubmit="return confirm('Delete this post?')">
+                            <button type="submit" class="community-action-btn"
+                                    style="color:var(--orange); border-color:rgba(255,107,53,.3);">
+                                🗑️ Delete
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No posts from this household yet.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community - Hapag</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky !important;
+            top: 0 !important; left: 0 !important; right: 0 !important;
+            bottom: unset !important; width: 100% !important;
+            z-index: 100 !important;
+            background: rgba(13,27,42,.95) !important;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border) !important;
+            display: flex !important; flex-direction: row !important;
+            align-items: center !important; justify-content: space-between !important;
+            padding: 0 2rem !important; height: 60px !important;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.5rem; color: var(--gold);
+            text-shadow: 0 0 18px rgba(245,166,35,.5);
+            display: flex; align-items: center; gap: .4rem;
+        }
+
+        .nav-brand img { width: 32px; height: 32px; object-fit: contain; }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .78rem; font-weight: 700;
+            padding: .35rem .75rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+
+        .nav-links a:hover  { color: var(--cream); background: var(--panel); }
+        .nav-links a.active { color: var(--jade); }
+        .nav-links a:last-child { color: var(--orange); border: 1px solid rgba(255,107,53,.3); }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+        /* ── PAGE HEADER ── */
+        .page-header { margin-bottom: 1.8rem; }
+
+        .page-header h2 {
+            font-family: var(--font-display);
+            font-size: 2rem; color: var(--cream); line-height: 1.1; margin-bottom: .3rem;
+        }
+
+        .page-header h2 span { color: var(--jade); }
+        .page-header p { font-size: .9rem; color: var(--muted); font-weight: 600; }
+
+        /* ── SECTION LABEL ── */
+        .section-label {
+            font-size: .7rem; font-weight: 800;
+            letter-spacing: .15em; text-transform: uppercase;
+            color: var(--muted); margin-bottom: 1rem;
+            display: flex; align-items: center; gap: .6rem;
+        }
+
+        .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        /* ── FLASH ── */
+        .alert {
+            border-radius: 10px; padding: .7rem 1rem;
+            font-size: .82rem; font-weight: 700;
+            margin-bottom: 1.2rem; border: 1px solid transparent;
+        }
+        .alert.error,.alert.danger { background:rgba(255,107,53,.12); border-color:rgba(255,107,53,.35); color:var(--orange); }
+        .alert.success { background:rgba(46,204,113,.1); border-color:rgba(46,204,113,.3); color:var(--jade); }
+        .alert.info    { background:rgba(56,189,248,.1); border-color:rgba(56,189,248,.3); color:var(--sky); }
+
+        /* ── LAYOUT GRID ── */
+        .feed-grid {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 1.4rem;
+            align-items: start;
+        }
+
+        /* ── POST FORM CARD ── */
+        .post-form-card {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.3rem;
+            margin-bottom: 1.2rem;
+            position: relative; overflow: hidden;
+        }
+
+        .post-form-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--jade), var(--sky));
+            border-radius: 16px 16px 0 0;
+        }
+
+        .post-form-card textarea {
+            width: 100%;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: .8rem 1rem;
+            color: var(--cream);
+            font-family: var(--font-body);
+            font-size: .9rem; font-weight: 600;
+            resize: none; outline: none;
+            margin-bottom: .85rem;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .post-form-card textarea:focus {
+            border-color: var(--jade);
+            box-shadow: 0 0 0 3px rgba(46,204,113,.12);
+        }
+
+        .post-form-card textarea::placeholder { color: var(--muted); }
+
+        /* image preview */
+        .img-preview-wrap { margin-bottom: .85rem; display: none; }
+
+        .img-preview-wrap img {
+            width: 100%; max-height: 280px; object-fit: cover;
+            border-radius: 10px; border: 1px solid var(--border); display: block;
+        }
+
+        .btn-remove-img {
+            background: none; border: none;
+            color: var(--orange); cursor: pointer;
+            font-size: .78rem; font-weight: 700;
+            margin-top: .4rem; padding: 0;
+        }
+
+        /* form actions row */
+        .post-actions-row {
+            display: flex; gap: .6rem; flex-wrap: wrap; align-items: center;
+        }
+
+        .recipe-link-input {
+            flex: 1; min-width: 130px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .6rem .85rem;
+            color: var(--cream);
+            font-family: var(--font-body);
+            font-size: .82rem; font-weight: 600;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        .recipe-link-input:focus { border-color: var(--jade); }
+        .recipe-link-input::placeholder { color: var(--muted); }
+
+        .btn-icon {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--muted); border-radius: 8px;
+            padding: .6rem .85rem;
+            font-family: var(--font-body);
+            font-size: .78rem; font-weight: 800;
+            cursor: pointer; white-space: nowrap;
+            transition: border-color .2s, color .2s;
+        }
+
+        .btn-icon:hover { border-color: var(--sky); color: var(--cream); }
+
+        .btn-post {
+            background: linear-gradient(135deg, var(--jade), #00d084);
+            color: var(--night); border: none; border-radius: 8px;
+            padding: .6rem 1.2rem;
+            font-family: var(--font-display);
+            font-size: .9rem; letter-spacing: .03em;
+            cursor: pointer; white-space: nowrap;
+            transition: transform .18s, filter .18s;
+            box-shadow: 0 3px 12px rgba(46,204,113,.25);
+        }
+
+        .btn-post:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+        /* no-household notice */
+        .join-notice {
+            background: rgba(245,166,35,.07);
+            border: 1px solid rgba(245,166,35,.2);
+            border-radius: 12px; padding: .85rem 1.1rem;
+            font-size: .85rem; font-weight: 700;
+            color: var(--muted); margin-bottom: 1.2rem;
+        }
+
+        .join-notice a { color: var(--gold); text-decoration: none; font-weight: 800; }
+        .join-notice a:hover { color: var(--orange); }
+
+        /* ── FEED ── */
+        .community-feed { display: flex; flex-direction: column; gap: 1rem; }
+
+        /* ── POST CARD ── */
+        .community-card {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 1.2rem;
+            position: relative; overflow: hidden;
+            transition: border-color .2s;
+        }
+
+        .community-card:hover { border-color: rgba(46,204,113,.25); }
+
+        /* ── AUTHOR ROW ── */
+        .community-author {
+            display: flex; align-items: center; gap: .8rem;
+            margin-bottom: .9rem;
+        }
+
+        .community-avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            border: 2px solid var(--border); overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; background: var(--panel); flex-shrink: 0;
+        }
+
+        .community-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .community-author-info { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+
+        .community-author-info strong {
+            font-size: .9rem; font-weight: 800; color: var(--cream);
+        }
+
+        .community-household-tag {
+            font-size: .7rem; font-weight: 700;
+            background: rgba(56,189,248,.1);
+            border: 1px solid rgba(56,189,248,.25);
+            color: var(--sky); border-radius: 99px;
+            padding: .1rem .55rem; text-decoration: none;
+            transition: background .2s;
+        }
+
+        .community-household-tag:hover { background: rgba(56,189,248,.2); }
+
+        .community-level {
+            font-size: .68rem; font-weight: 800;
+            color: var(--jade); letter-spacing: .05em;
+        }
+
+        .follow-btn {
+            background: transparent;
+            border: 1px solid rgba(245,166,35,.35);
+            color: var(--gold); border-radius: 99px;
+            padding: .12rem .6rem;
+            font-family: var(--font-body);
+            font-size: .68rem; font-weight: 800;
+            cursor: pointer; letter-spacing: .03em;
+            transition: background .2s;
+        }
+
+        .follow-btn:hover { background: rgba(245,166,35,.1); }
+
+        .community-time {
+            font-size: .7rem; color: var(--muted); font-weight: 600;
+            margin-left: auto; white-space: nowrap; flex-shrink: 0;
+        }
+
+        /* post content */
+        .community-content {
+            font-size: .88rem; font-weight: 600;
+            color: var(--cream); line-height: 1.55;
+            margin-bottom: .85rem;
+        }
+
+        /* post image */
+        .post-img-wrap { margin-bottom: .85rem; border-radius: 12px; overflow: hidden; }
+
+        .post-img-wrap img {
+            width: 100%; max-height: 380px; object-fit: cover;
+            cursor: pointer; transition: max-height .3s ease; display: block;
+        }
+
+        /* recipe link */
+        .community-recipe-link {
+            display: inline-flex; align-items: center; gap: .35rem;
+            background: rgba(245,166,35,.08);
+            border: 1px solid rgba(245,166,35,.25);
+            color: var(--gold); text-decoration: none;
+            border-radius: 8px; padding: .3rem .75rem;
+            font-size: .78rem; font-weight: 800;
+            margin-bottom: .85rem;
+            transition: background .2s;
+        }
+
+        .community-recipe-link:hover { background: rgba(245,166,35,.15); }
+
+        /* ── ACTION BAR ── */
+        .community-actions {
+            display: flex; align-items: center; gap: .5rem;
+            padding-top: .75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .community-action-btn {
+            display: inline-flex; align-items: center; gap: .3rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--muted); border-radius: 8px;
+            padding: .35rem .75rem;
+            font-family: var(--font-body);
+            font-size: .78rem; font-weight: 800;
+            cursor: pointer; text-decoration: none;
+            transition: border-color .2s, color .2s, background .2s;
+        }
+
+        .community-action-btn:hover { border-color: var(--gold); color: var(--cream); }
+
+        .community-action-btn.liked {
+            background: rgba(255,107,53,.1);
+            border-color: rgba(255,107,53,.35);
+            color: var(--orange);
+        }
+
+        .community-action-btn.delete {
+            border-color: rgba(255,107,53,.2);
+            color: rgba(255,107,53,.6);
+            margin-left: auto;
+        }
+
+        .community-action-btn.delete:hover {
+            background: rgba(255,107,53,.1);
+            color: var(--orange);
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .empty-state .empty-icon { font-size: 2.8rem; display: block; margin-bottom: .8rem; }
+        .empty-state p { font-size: .9rem; color: var(--muted); font-weight: 600; }
+
+        /* ── SIDEBAR ── */
+        .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+
+        .sidebar-card {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 1.3rem;
+            position: relative; overflow: hidden;
+        }
+
+        .sidebar-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--sb-accent, var(--gold));
+            border-radius: 16px 16px 0 0;
+        }
+
+        .sidebar-card:nth-child(1) { --sb-accent: var(--sky); }
+        .sidebar-card:nth-child(2) { --sb-accent: var(--gold); }
+
+        .sidebar-card h3 {
+            font-family: var(--font-display);
+            font-size: 1rem; color: var(--cream); margin-bottom: .5rem;
+        }
+
+        .sidebar-card p {
+            font-size: .78rem; color: var(--muted); font-weight: 600;
+            line-height: 1.5; margin-bottom: .9rem;
+        }
+
+        .btn-sidebar {
+            display: block; text-align: center; width: 100%;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--cream); text-decoration: none;
+            border-radius: 8px; padding: .65rem;
+            font-family: var(--font-body);
+            font-size: .82rem; font-weight: 800;
+            transition: border-color .2s, background .2s;
+        }
+
+        .btn-sidebar:hover { border-color: var(--sb-accent, var(--gold)); background: rgba(56,189,248,.06); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 720px) {
+            .feed-grid { grid-template-columns: 1fr; }
+            .sidebar { display: grid; grid-template-columns: 1fr 1fr; }
+            .main-container { padding: 1.5rem 1rem 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
+            Hapag
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Recipes</a>
+            <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('community') }}">Community</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+
+        <!-- PAGE HEADER -->
+        <div class="page-header">
+            <h2>🌏 <span>Community</span> Feed</h2>
+            <p>See what Filipino households are cooking across the country!</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="feed-grid">
+
+            <!-- ── MAIN FEED ── -->
+            <div>
+
+                <!-- CREATE POST -->
+                {% if user_household_id %}
+                <div class="post-form-card">
+                    <form method="POST" action="{{ url_for('create_post') }}"
+                          enctype="multipart/form-data" id="communityPostForm">
+                        <input type="hidden" name="share_target" value="community">
+
+                        <textarea name="content" rows="3"
+                                  placeholder="What did you cook today? Share with the community! 🍳"></textarea>
+
+                        <!-- IMAGE PREVIEW -->
+                        <div class="img-preview-wrap" id="imagePreviewContainer">
+                            <img id="imagePreview" src="" alt="Preview">
+                            <button type="button" onclick="removeImage()" class="btn-remove-img">
+                                ❌ Remove Image
+                            </button>
+                        </div>
+
+                        <!-- HIDDEN FILE INPUTS -->
+                        <input type="file" name="post_image" id="cameraInput"
+                               accept="image/*" capture="environment"
+                               style="display:none;" onchange="previewImage(this)">
+                        <input type="file" name="post_image" id="fileInput"
+                               accept="image/*"
+                               style="display:none;" onchange="previewImage(this)">
+
+                        <div class="post-actions-row">
+                            <input type="text" name="recipe_name" class="recipe-link-input"
+                                   placeholder="🔗 Link a recipe (optional)">
+                            <button type="button" class="btn-icon"
+                                    onclick="document.getElementById('fileInput').click()">
+                                🖼️ Photo
+                            </button>
+                            <button type="button" class="btn-icon"
+                                    onclick="document.getElementById('cameraInput').click()">
+                                📷 Camera
+                            </button>
+                            <button type="submit" class="btn-post">📤 Post</button>
+                        </div>
+                    </form>
+                </div>
+
+                {% else %}
+                <div class="join-notice">
+                    🏠 <a href="{{ url_for('household') }}">Join or create a household</a>
+                    to post in the community feed!
+                </div>
+                {% endif %}
+
+                <!-- SECTION LABEL -->
+                <div class="section-label">Latest Posts</div>
+
+                <!-- POSTS -->
+                {% if posts %}
+                <div class="community-feed">
+                    {% for post in posts %}
+                    <div class="community-card">
+
+                        <!-- AUTHOR ROW -->
+                        <div class="community-author">
+                            <div class="community-avatar">
+                                {% if post.author_picture %}
+                                    <img src="{{ post.author_picture }}" alt="{{ post.author_username }}">
+                                {% else %}
+                                    👤
+                                {% endif %}
+                            </div>
+
+                            <div class="community-author-info">
+                                <strong>{{ post.author_username }}</strong>
+
+                                {% if post.household_name %}
+                                    <a href="{{ url_for('view_household', household_id=post.household_id) }}"
+                                       class="community-household-tag">
+                                        🏠 {{ post.household_name }}
+                                    </a>
+                                {% endif %}
+
+                                {% if post.author_username != current_username %}
+                                <form method="POST"
+                                      action="{{ url_for('follow_user', username=post.author_username) }}"
+                                      style="display:inline;">
+                                    <button type="submit" class="follow-btn">+ Follow</button>
+                                </form>
+                                {% endif %}
+
+                                <span class="community-level">{{ post.author_level }}</span>
+                            </div>
+
+                            <span class="community-time">{{ post.created_at }}</span>
+                        </div>
+
+                        <!-- CONTENT -->
+                        {% if post.content %}
+                            <p class="community-content">{{ post.content }}</p>
+                        {% endif %}
+
+                        <!-- IMAGE -->
+                        {% if post.image %}
+                        <div class="post-img-wrap">
+                            <img src="{{ post.image }}" alt="Post image"
+                                 onclick="this.style.maxHeight = this.style.maxHeight === 'none' ? '380px' : 'none'">
+                        </div>
+                        {% endif %}
+
+                        <!-- RECIPE LINK -->
+                        {% if post.recipe_name %}
+                        <a href="{{ url_for('recipe_detail', recipe_name=post.recipe_name) }}"
+                           class="community-recipe-link">
+                            🍲 {{ post.recipe_name }}
+                        </a>
+                        {% endif %}
+
+                        <!-- ACTION BAR -->
+                        <div class="community-actions">
+                            <form method="POST"
+                                  action="{{ url_for('like_post', post_id=post.id) }}"
+                                  style="display:inline;">
+                                <button type="submit"
+                                        class="community-action-btn {% if post.liked_by_me %}liked{% endif %}">
+                                    ❤️ {{ post.likes }}
+                                </button>
+                            </form>
+
+                            <a href="{{ url_for('view_comments', post_id=post.id) }}"
+                               class="community-action-btn">
+                                💬 {{ post.comment_count }}
+                            </a>
+
+                            {% if post.is_mine %}
+                            <form method="POST"
+                                  action="{{ url_for('delete_post', post_id=post.id) }}"
+                                  style="display:inline; margin-left:auto;"
+                                  onsubmit="return confirm('Delete this post?')">
+                                <button type="submit" class="community-action-btn delete">
+                                    🗑️ Delete
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-icon">🍳</span>
+                    <p>No posts yet. Be the first to share!</p>
+                </div>
+                {% endif %}
+
+            </div>
+
+            <!-- ── SIDEBAR ── -->
+            <div class="sidebar">
+
+                <div class="sidebar-card">
+                    <h3>🏠 Browse Households</h3>
+                    <p>Discover other Filipino households and see what they're cooking.</p>
+                    <a href="{{ url_for('households_directory') }}" class="btn-sidebar">
+                        View All Households
+                    </a>
+                </div>
+
+                <div class="sidebar-card">
+                    <h3>🏆 Top Cooks</h3>
+                    <p>See who's leading the leaderboard this week.</p>
+                    <a href="{{ url_for('leaderboard') }}" class="btn-sidebar">
+                        View Leaderboard
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('imagePreviewContainer').style.display = 'block';
+                    const other = input.id === 'fileInput'
+                        ? document.getElementById('cameraInput')
+                        : document.getElementById('fileInput');
+                    other.value = '';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function removeImage() {
+            document.getElementById('fileInput').value = '';
+            document.getElementById('cameraInput').value = '';
+            document.getElementById('imagePreview').src = '';
+            document.getElementById('imagePreviewContainer').style.display = 'none';
+        }
+    </script>
+
+</body>
+</html>

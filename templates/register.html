@@ -2,15 +2,576 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Hapag</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            align-items: stretch;
+            overflow-y: auto; /* Allow body to scroll */
+        }
+
+        /* ══════════════════════════════════════
+           LEFT PANEL — illustration side
+        ══════════════════════════════════════ */
+        .left-panel {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2.5rem;
+            overflow: hidden;
+            background: var(--night);
+            min-height: 100vh; /* Ensure full height */
+        }
+
+        /* large blob shape */
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            width: 520px;
+            height: 520px;
+            background: radial-gradient(ellipse at 40% 50%, rgba(245,166,35,.13) 0%, rgba(46,204,113,.07) 50%, transparent 75%);
+            border-radius: 60% 40% 55% 45% / 50% 55% 45% 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: blobMorph 8s ease-in-out infinite;
+        }
+
+        /* secondary smaller blob */
+        .left-panel::after {
+            content: '';
+            position: absolute;
+            width: 340px;
+            height: 340px;
+            background: radial-gradient(ellipse, rgba(255,107,53,.08) 0%, transparent 70%);
+            border-radius: 40% 60% 45% 55% / 55% 40% 60% 45%;
+            top: 45%;
+            left: 48%;
+            transform: translate(-50%, -50%);
+            animation: blobMorph 12s ease-in-out infinite reverse;
+        }
+
+        @keyframes blobMorph {
+            0%, 100% { border-radius: 60% 40% 55% 45% / 50% 55% 45% 50%; }
+            33%       { border-radius: 45% 55% 40% 60% / 60% 45% 55% 40%; }
+            66%       { border-radius: 55% 45% 60% 40% / 40% 60% 45% 55%; }
+        }
+
+        /* logo top-left */
+        .left-logo {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .left-logo .logo-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 0 10px rgba(245,166,35,.6));
+            animation: iconBob 3s ease-in-out infinite;
+        }
+
+        .left-logo h1 {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(245,166,35,.4);
+            letter-spacing: .04em;
+        }
+
+        @keyframes iconBob {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-5px); }
+        }
+
+        /* illustration */
+        .illustration {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .hero-img {
+            width: 340px;
+            height: 340px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            filter: drop-shadow(0 12px 32px rgba(0,0,0,.6));
+            animation: heroFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes heroFloat {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-14px); }
+        }
+
+        .illustration-caption {
+            font-family: var(--font-display);
+            font-size: 1.35rem;
+            color: var(--cream);
+            margin-top: 1.5rem;
+            letter-spacing: .02em;
+        }
+
+        .illustration-sub {
+            font-size: .8rem;
+            font-weight: 700;
+            color: var(--muted);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-top: .3rem;
+        }
+
+        /* floating mini orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(245,166,35,.18), transparent 70%);
+        }
+
+        .orb-1 { width: 80px; height: 80px; top: 12%; right: 18%; animation: orbFloat 7s ease-in-out infinite; }
+        .orb-2 { width: 50px; height: 50px; bottom: 20%; left: 12%; animation: orbFloat 9s ease-in-out infinite reverse; background: radial-gradient(circle, rgba(46,204,113,.15), transparent 70%); }
+        .orb-3 { width: 30px; height: 30px; top: 65%; right: 12%; animation: orbFloat 6s ease-in-out infinite; background: radial-gradient(circle, rgba(255,107,53,.2), transparent 70%); }
+
+        @keyframes orbFloat {
+            0%,100% { transform: translateY(0); }
+            50%      { transform: translateY(-14px); }
+        }
+
+        /* ══════════════════════════════════════
+           RIGHT PANEL
+        ══════════════════════════════════════ */
+        .right-panel {
+            width: 440px;
+            flex-shrink: 0;
+            background: var(--deep);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2.5rem;
+            position: relative;
+            clip-path: ellipse(105% 100% at 100% 50%);
+            min-height: 100vh; /* Ensure full height */
+            overflow-y: auto; /* Allow scrolling if content overflows */
+        }
+
+        /* Remove clip-path on scroll to prevent visual issues */
+        .right-panel.scrollable {
+            clip-path: none;
+        }
+
+        .right-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--jade), var(--sky));
+        }
+
+        .right-panel .tagline {
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--muted);
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: .5rem;
+        }
+
+        .right-panel h2 {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--cream);
+            text-align: center;
+            margin-bottom: 1.6rem;
+            letter-spacing: .03em;
+        }
+
+        /* perks row */
+        .perks {
+            display: flex;
+            gap: .6rem;
+            margin-bottom: 1.6rem;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .perk {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: .25rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: .5rem .7rem;
+            flex: 1;
+            min-width: 60px;
+        }
+
+        .perk-icon { font-size: 1.2rem; }
+
+        .perk-label {
+            font-size: .62rem;
+            font-weight: 800;
+            color: var(--muted);
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        /* flash */
+        .alert {
+            width: 100%;
+            border-radius: 8px;
+            padding: .6rem .9rem;
+            font-size: .8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+        }
+        .alert.error, .alert.danger { background: rgba(255,107,53,.12); border-color: rgba(255,107,53,.35); color: #FF6B35; }
+        .alert.success              { background: rgba(46,204,113,.1);  border-color: rgba(46,204,113,.3);  color: var(--jade); }
+        .alert.info                 { background: rgba(56,189,248,.1);  border-color: rgba(56,189,248,.3);  color: #38BDF8; }
+
+        /* form */
+        form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: .9rem;
+        }
+
+        .input-wrap { position: relative; }
+
+        .input-label {
+            display: block;
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: .35rem;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: .9rem;
+            bottom: .85rem;
+            font-size: .95rem;
+            pointer-events: none;
+        }
+
+        form input {
+            width: 100%;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: .8rem .9rem .8rem 2.6rem;
+            color: var(--cream);
+            font-family: var(--font-body);
+            font-size: .9rem;
+            font-weight: 600;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        form input::placeholder { color: var(--muted); }
+
+        form input:focus {
+            border-color: var(--jade);
+            box-shadow: 0 0 0 3px rgba(46,204,113,.15);
+        }
+
+        form button {
+            margin-top: .3rem;
+            width: 100%;
+            background: linear-gradient(135deg, var(--jade), #00d084);
+            color: var(--night);
+            border: none;
+            border-radius: 10px;
+            padding: .9rem;
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            letter-spacing: .06em;
+            cursor: pointer;
+            transition: transform .18s, box-shadow .18s, filter .18s;
+            box-shadow: 0 4px 20px rgba(46,204,113,.3);
+        }
+
+        form button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(46,204,113,.45);
+            filter: brightness(1.08);
+        }
+
+        form button:active { transform: translateY(0); }
+
+        .auth-footer {
+            margin-top: 1.3rem;
+            text-align: center;
+            padding-bottom: 0.5rem;
+        }
+
+        .auth-footer p {
+            font-size: .8rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .auth-footer a {
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: 800;
+            transition: color .18s;
+        }
+
+        .auth-footer a:hover { color: var(--orange); }
+
+        /* ── Scrollbar styling ── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--night);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .right-panel {
+                width: 380px;
+                padding: 2.5rem 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+
+            .left-panel {
+                padding: 2.5rem 1.5rem 1.5rem;
+                min-height: 320px;
+                height: auto;
+            }
+
+            .left-panel::before,
+            .left-panel::after {
+                display: none;
+            }
+
+            .hero-img {
+                width: 180px;
+                height: 180px;
+            }
+
+            .illustration-caption {
+                font-size: 1.1rem;
+                margin-top: 0.8rem;
+            }
+
+            .illustration-sub {
+                font-size: 0.7rem;
+            }
+
+            .orb {
+                display: none;
+            }
+
+            .left-logo {
+                top: 1rem;
+                left: 1rem;
+            }
+
+            .left-logo h1 {
+                font-size: 1.2rem;
+            }
+
+            .left-logo .logo-icon {
+                font-size: 1.5rem;
+            }
+
+            .right-panel {
+                width: 100%;
+                clip-path: none;
+                border-left: none;
+                border-top: 1px solid var(--border);
+                padding: 2rem 1.5rem 2.5rem;
+                min-height: auto;
+                height: auto;
+            }
+
+            .right-panel.scrollable {
+                clip-path: none;
+            }
+
+            .right-panel::before {
+                height: 2px;
+            }
+
+            .right-panel h2 {
+                font-size: 1.3rem;
+                margin-bottom: 1rem;
+            }
+
+            .perks {
+                gap: 0.4rem;
+            }
+
+            .perk {
+                padding: 0.4rem 0.5rem;
+            }
+
+            form input {
+                padding: 0.7rem 0.8rem 0.7rem 2.2rem;
+                font-size: 0.85rem;
+            }
+
+            form button {
+                padding: 0.8rem;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .left-panel {
+                min-height: 260px;
+                padding: 1.5rem 1rem 1rem;
+            }
+
+            .hero-img {
+                width: 140px;
+                height: 140px;
+            }
+
+            .illustration-caption {
+                font-size: 0.95rem;
+            }
+
+            .right-panel {
+                padding: 1.5rem 1rem 2rem;
+            }
+
+            .right-panel h2 {
+                font-size: 1.1rem;
+            }
+
+            .perk-label {
+                font-size: 0.55rem;
+            }
+
+            .input-label {
+                font-size: 0.65rem;
+            }
+
+            form input {
+                padding: 0.6rem 0.7rem 0.6rem 2rem;
+                font-size: 0.8rem;
+            }
+
+            .auth-footer p {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="auth-container">
-        <h1>🍽️ Hapag</h1>
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+
+        <div class="left-logo">
+            <img src="{{ url_for('static', filename='images/icon.png') }}"
+                 alt="Hapag logo"
+                 style="width: 40px; height: 40px; object-fit: contain;
+                        filter: drop-shadow(0 0 8px rgba(245,166,35,.5));">
+            <h1>Hapag</h1>
+        </div>
+
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+
+        <div class="illustration">
+            <img src="{{ url_for('static', filename='images/icon.png') }}"
+                 alt="Hapag mascot"
+                 class="hero-img">
+            <p class="illustration-caption">Cook. Play. Panalo.</p>
+            <p class="illustration-sub">Your kitchen adventure awaits</p>
+        </div>
+
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel" id="rightPanel">
+
+        <p class="tagline">Sumali na · Join the kitchen</p>
         <h2>Create Account</h2>
 
-        <!-- Flash messages -->
+        <!-- perks mini-row -->
+        <div class="perks">
+            <div class="perk">
+                <span class="perk-icon">⭐</span>
+                <span class="perk-label">Earn XP</span>
+            </div>
+            <div class="perk">
+                <span class="perk-icon">🏆</span>
+                <span class="perk-label">Win badges</span>
+            </div>
+            <div class="perk">
+                <span class="perk-icon">🍽️</span>
+                <span class="perk-label">Cook more</span>
+            </div>
+        </div>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category, message in messages %}
                 <div class="alert {{ category }}">{{ message }}</div>
@@ -18,13 +579,52 @@
         {% endwith %}
 
         <form method="POST">
-            <input type="text" name="username" placeholder="Full Name" required>
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Register</button>
+            <div class="input-wrap">
+                <label class="input-label" for="username">Full Name</label>
+                <span class="input-icon"></span>
+                <input type="text" id="username" name="username" placeholder="Juan dela Cruz" required>
+            </div>
+
+            <div class="input-wrap">
+                <label class="input-label" for="email">Email</label>
+                <span class="input-icon"></span>
+                <input type="email" id="email" name="email" placeholder="your@email.com" required>
+            </div>
+
+            <div class="input-wrap">
+                <label class="input-label" for="password">Password</label>
+                <span class="input-icon"></span>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit">Create Account</button>
         </form>
 
-        <p>Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+        <div class="auth-footer">
+            <p>Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+        </div>
+
     </div>
+
+    <script>
+        // Check if right panel content overflows and adjust clip-path if needed
+        document.addEventListener('DOMContentLoaded', function() {
+            const panel = document.getElementById('rightPanel');
+            if (panel.scrollHeight > panel.clientHeight) {
+                panel.classList.add('scrollable');
+            }
+        });
+
+        // Also check on resize
+        window.addEventListener('resize', function() {
+            const panel = document.getElementById('rightPanel');
+            if (panel.scrollHeight > panel.clientHeight) {
+                panel.classList.add('scrollable');
+            } else {
+                panel.classList.remove('scrollable');
+            }
+        });
+    </script>
+
 </body>
 </html>

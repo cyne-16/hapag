@@ -2,16 +2,188 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Users - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.3rem; color: var(--gold);
+            display: flex; align-items: center; gap: .4rem;
+        }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .76rem; font-weight: 700;
+            padding: .35rem .7rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+
+        .nav-links a:hover  { color: var(--cream); background: var(--panel); }
+        .nav-links a.active { color: var(--sky); }
+
+        .nav-links a:nth-last-child(2) {
+            color: var(--jade);
+            border: 1px solid rgba(46,204,113,.3);
+        }
+        .nav-links a:nth-last-child(2):hover { background: rgba(46,204,113,.12); }
+
+        .nav-links a:last-child {
+            color: var(--orange);
+            border: 1px solid rgba(255,107,53,.3);
+        }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container { max-width: 1200px; margin: 0 auto; padding: 2.2rem 2rem 4rem; }
+
+        .main-container > h2 {
+            font-family: var(--font-display);
+            font-size: 1.7rem; color: var(--cream);
+        }
+
+        /* ── ALERTS ── */
+        .alert {
+            border-radius: 10px; padding: .7rem 1rem;
+            font-size: .82rem; font-weight: 700;
+            margin-top: 1rem; border: 1px solid transparent;
+        }
+        .alert.error,.alert.danger { background:rgba(255,107,53,.12); border-color:rgba(255,107,53,.35); color:var(--orange); }
+        .alert.success { background:rgba(46,204,113,.1); border-color:rgba(46,204,113,.3); color:var(--jade); }
+        .alert.info    { background:rgba(56,189,248,.1); border-color:rgba(56,189,248,.3); color:var(--sky); }
+
+        /* ── SECTION CARD ── */
+        .recipe-section {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.4rem;
+            position: relative; overflow: hidden;
+        }
+
+        .recipe-section::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--sky), var(--purple));
+            border-radius: 14px 14px 0 0;
+        }
+
+        /* ── TABLE ── */
+        .ingredients-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .85rem;
+        }
+
+        .ingredients-table thead th {
+            text-align: left;
+            font-size: .72rem; font-weight: 800; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .06em;
+            padding: .65rem .7rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ingredients-table tbody td {
+            padding: .7rem .7rem;
+            color: var(--cream); font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .ingredients-table tbody tr:last-child td { border-bottom: none; }
+        .ingredients-table tbody tr:hover { background: var(--panel); }
+
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--sky), #1E9FE0);
+            color: var(--night);
+            border: none; border-radius: 8px;
+            font-family: var(--font-display);
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform .15s ease, filter .15s ease;
+        }
+
+        .btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+        .btn-delete {
+            background: rgba(255,107,53,.12);
+            border: 1px solid rgba(255,107,53,.35);
+            color: var(--orange);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-family: var(--font-body);
+            font-weight: 800;
+            font-size: .85rem;
+            cursor: pointer;
+            transition: background .2s, border-color .2s;
+        }
+
+        .btn-delete:hover { background: rgba(255,107,53,.2); border-color: var(--orange); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 720px) {
+            .main-container { padding: 1.5rem 1rem 3rem; }
+            .ingredients-table { display: block; overflow-x: auto; white-space: nowrap; }
+        }
+    </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag Admin</div>
+        <div class="nav-brand">
+    <img src="{{ url_for('static', filename='images/icon.png') }}"
+         alt="Hapag"
+         style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;">
+    Hapag
+</div>
         <div class="nav-links">
             <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('admin_users') }}">Users</a>
+            <a href="{{ url_for('admin_users') }}" class="active">Users</a>
             <a href="{{ url_for('admin_recipes') }}">Recipes</a>
             <a href="{{ url_for('dashboard') }}">Back to App</a>
             <a href="{{ url_for('logout') }}">Logout</a>

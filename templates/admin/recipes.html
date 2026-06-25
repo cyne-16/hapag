@@ -2,17 +2,289 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Recipes - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.3rem; color: var(--gold);
+            display: flex; align-items: center; gap: .4rem;
+        }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .76rem; font-weight: 700;
+            padding: .35rem .7rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+
+        .nav-links a:hover  { color: var(--cream); background: var(--panel); }
+        .nav-links a.active { color: var(--sky); }
+
+        .nav-links a:nth-last-child(2) {
+            color: var(--jade);
+            border: 1px solid rgba(46,204,113,.3);
+        }
+        .nav-links a:nth-last-child(2):hover { background: rgba(46,204,113,.12); }
+
+        .nav-links a:last-child {
+            color: var(--orange);
+            border: 1px solid rgba(255,107,53,.3);
+        }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container { max-width: 1200px; margin: 0 auto; padding: 2.2rem 2rem 4rem; }
+
+        .main-container > h2 {
+            font-family: var(--font-display);
+            font-size: 1.7rem; color: var(--cream);
+        }
+
+        /* ── ALERTS ── */
+        .alert {
+            border-radius: 10px; padding: .7rem 1rem;
+            font-size: .82rem; font-weight: 700;
+            margin-top: 1rem; border: 1px solid transparent;
+        }
+        .alert.error, .alert.danger { background:rgba(255,107,53,.12); border-color:rgba(255,107,53,.35); color:var(--orange); }
+        .alert.success { background:rgba(46,204,113,.1); border-color:rgba(46,204,113,.3); color:var(--jade); }
+        .alert.info    { background:rgba(56,189,248,.1); border-color:rgba(56,189,248,.3); color:var(--sky); }
+
+        /* ── TOOLBAR ── */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-add {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: linear-gradient(135deg, var(--sky), var(--purple));
+            color: #fff;
+            font-family: var(--font-body);
+            font-size: .8rem;
+            font-weight: 800;
+            text-decoration: none;
+            padding: .5rem 1.1rem;
+            border-radius: 8px;
+            letter-spacing: .03em;
+            transition: opacity .18s, transform .18s;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-add:hover { opacity: .88; transform: translateY(-1px); }
+
+        .category-select {
+            background: var(--deep);
+            color: var(--cream);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .45rem .9rem;
+            font-family: var(--font-body);
+            font-size: .8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: border-color .18s;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238FAABB' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right .75rem center;
+            padding-right: 2.2rem;
+        }
+        .category-select:hover, .category-select:focus {
+            border-color: var(--sky);
+            outline: none;
+        }
+
+        /* ── SECTION CARD ── */
+        .recipe-section {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.4rem;
+            position: relative; overflow: hidden;
+            margin-top: 24px;
+        }
+
+        .recipe-section::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--sky), var(--purple));
+            border-radius: 14px 14px 0 0;
+        }
+
+        /* ── TABLE ── */
+        .ingredients-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .85rem;
+        }
+
+        .ingredients-table thead th {
+            text-align: left;
+            font-size: .72rem; font-weight: 800; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .06em;
+            padding: .6rem .7rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ingredients-table tbody td {
+            padding: .65rem .7rem;
+            color: var(--cream); font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .ingredients-table tbody tr:last-child td { border-bottom: none; }
+        .ingredients-table tbody tr:hover { background: var(--panel); }
+
+        /* ── RARITY BADGES ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: .72rem;
+            font-weight: 800;
+            padding: .25rem .6rem;
+            border-radius: 20px;
+            letter-spacing: .03em;
+        }
+        .badge.common    { background: rgba(67,160,71,.15);  color: #43a047; border: 1px solid rgba(67,160,71,.35); }
+        .badge.uncommon  { background: rgba(25,118,210,.15); color: #42a5f5; border: 1px solid rgba(25,118,210,.35); }
+        .badge.rare      { background: rgba(123,31,162,.15); color: #ce93d8; border: 1px solid rgba(123,31,162,.35); }
+        .badge.legendary { background: rgba(245,166,35,.15); color: var(--gold); border: 1px solid rgba(245,166,35,.35); }
+
+        /* ── ACTION BUTTONS ── */
+        .action-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            font-family: var(--font-body);
+            font-size: .73rem;
+            font-weight: 800;
+            padding: .32rem .75rem;
+            border-radius: 7px;
+            text-decoration: none;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: opacity .15s, transform .15s;
+            white-space: nowrap;
+        }
+        .btn-action:hover { opacity: .82; transform: translateY(-1px); }
+
+        .btn-edit {
+            background: rgba(56,189,248,.12);
+            border-color: rgba(56,189,248,.35);
+            color: var(--sky);
+        }
+        .btn-prices {
+            background: rgba(46,204,113,.12);
+            border-color: rgba(46,204,113,.35);
+            color: var(--jade);
+        }
+        .btn-delete {
+            background: rgba(255,107,53,.12);
+            border-color: rgba(255,107,53,.35);
+            color: var(--orange);
+            font-family: var(--font-body);
+            font-size: .73rem;
+            font-weight: 800;
+            padding: .32rem .75rem;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: opacity .15s, transform .15s;
+            white-space: nowrap;
+        }
+        .btn-delete:hover { opacity: .82; transform: translateY(-1px); }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--muted);
+            font-size: .9rem;
+            font-weight: 700;
+        }
+        .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: .6rem; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 720px) {
+            .main-container { padding: 1.5rem 1rem 3rem; }
+            .ingredients-table { display: block; overflow-x: auto; white-space: nowrap; }
+            .toolbar { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag Admin</div>
+        <div class="nav-brand">
+            <img src="{{ url_for('static', filename='images/icon.png') }}"
+                 alt="Hapag"
+                 style="width:32px; height:32px; object-fit:contain; vertical-align:middle;">
+            Hapag
+        </div>
         <div class="nav-links">
             <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
             <a href="{{ url_for('admin_users') }}">Users</a>
-            <a href="{{ url_for('admin_recipes') }}">Recipes</a>
+            <a href="{{ url_for('admin_recipes') }}" class="active">Recipes</a>
+            <a href="{{ url_for('admin_ai_review') }}">AI Review</a>
+            <a href="{{ url_for('admin_statistics') }}">Statistics</a>
+            <a href="{{ url_for('admin_evidence') }}">Evidence</a>
             <a href="{{ url_for('dashboard') }}">Back to App</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
@@ -21,28 +293,27 @@
     <div class="main-container">
         <h2>🍲 Manage Recipes</h2>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
-    <a href="{{ url_for('admin_add_recipe') }}" class="btn">
-        ➕ Add New Recipe
-    </a>
-
-    <form method="GET" style="display:flex; gap:8px;">
-        <select name="category" onchange="this.form.submit()" style="padding:8px; border-radius:8px; border:1px solid #ddd;">
-            <option value="">All Categories</option>
-            {% for cat in categories %}
-                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
-            {% endfor %}
-        </select>
-    </form>
-</div>
-
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category, message in messages %}
                 <div class="alert {{ category }}">{{ message }}</div>
             {% endfor %}
         {% endwith %}
 
-        <div class="recipe-section" style="margin-top: 24px;">
+        <div class="toolbar">
+            <a href="{{ url_for('admin_add_recipe') }}" class="btn-add">
+                ➕ Add New Recipe
+            </a>
+            <form method="GET">
+                <select name="category" class="category-select" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+
+        <div class="recipe-section">
             {% if recipes %}
             <table class="ingredients-table">
                 <thead>
@@ -51,6 +322,8 @@
                         <th>Category</th>
                         <th>Servings</th>
                         <th>Est. Cost</th>
+                        <th>Rarity</th>
+                        <th>Required Level</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -61,27 +334,45 @@
                         <td>{{ recipe.category or "—" }}</td>
                         <td>{{ recipe.servings }}</td>
                         <td>{{ recipe.estimated_total_cost }}</td>
-                        <td style="display:flex; gap:8px;">
-    <a href="{{ url_for('admin_edit_recipe', recipe_id=recipe._id) }}"
-       class="btn" style="padding: 6px 14px; font-size:0.85rem;">
-        ✏️ Edit
-    </a>
-    <a href="{{ url_for('admin_update_prices', recipe_id=recipe._id) }}"
-       class="btn" style="padding: 6px 14px; font-size:0.85rem; background-color:#2e7d32;">
-        💰 Prices
-    </a>
-    <form method="POST"
-          action="{{ url_for('admin_delete_recipe', recipe_id=recipe._id) }}"
-          onsubmit="return confirm('Delete this recipe?')">
-        <button type="submit" class="btn-delete">🗑 Delete</button>
-    </form>
-</td>
+                        <td>
+                            {% set cost_str = recipe.estimated_total_cost | default("₱0") %}
+                            {% set digits = cost_str | replace("₱","") | replace(",","") %}
+                            {% set cost = digits | int if digits else 0 %}
+                            {% if cost <= 150 %}
+                                <span class="badge common">🟢 Common</span>
+                            {% elif cost <= 300 %}
+                                <span class="badge uncommon">🔵 Uncommon</span>
+                            {% elif cost <= 500 %}
+                                <span class="badge rare">🟣 Rare</span>
+                            {% else %}
+                                <span class="badge legendary">🟡 Legendary</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ recipe.required_level or "Beginner Cook" }}</td>
+                        <td>
+                            <div class="action-group">
+                                <a href="{{ url_for('admin_edit_recipe', recipe_id=recipe._id) }}" class="btn-action btn-edit">
+                                    ✏️ Edit
+                                </a>
+                                <a href="{{ url_for('admin_update_prices', recipe_id=recipe._id) }}" class="btn-action btn-prices">
+                                    💰 Prices
+                                </a>
+                                <form method="POST"
+                                      action="{{ url_for('admin_delete_recipe', recipe_id=recipe._id) }}"
+                                      onsubmit="return confirm('Delete this recipe?')">
+                                    <button type="submit" class="btn-delete">🗑 Delete</button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% else %}
-                <p>No recipes in database yet. Add one!</p>
+                <div class="empty-state">
+                    <div class="empty-icon">🍽️</div>
+                    <p>No recipes yet — add the first one!</p>
+                </div>
             {% endif %}
         </div>
     </div>

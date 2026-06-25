@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Post - Hapag Community</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+     <nav class="navbar">
+        <div class="nav-brand">
+            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
+            Hapag
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Recipes</a>
+            <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('community') }}">Community</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container" style="max-width:680px;">
+
+        <a href="{{ url_for('community') }}"
+           style="color:#e05c00; font-size:0.9rem;">← Back to Community</a>
+
+        <!-- POST -->
+        <div class="community-card" style="margin-top:16px;">
+            <div class="community-author">
+                <div class="community-avatar">
+                    {% if post.author_picture %}
+                        <img src="{{ post.author_picture }}"
+                             style="width:42px; height:42px; border-radius:50%; object-fit:cover;">
+                    {% else %}
+                        <div class="community-avatar-placeholder">👤</div>
+                    {% endif %}
+                </div>
+                <div class="community-author-info">
+                    <strong>{{ post.author_username }}</strong>
+                    <span class="community-level">{{ post.author_level }}</span>
+                </div>
+                <span class="community-time">{{ post.created_at }}</span>
+            </div>
+
+            <p class="community-content">{{ post.content }}</p>
+
+            {% if post.recipe_name %}
+            <a href="{{ url_for('recipe_detail', recipe_name=post.recipe_name) }}"
+               class="community-recipe-link">
+                🍲 {{ post.recipe_name }}
+            </a>
+            {% endif %}
+
+            <div class="community-actions">
+                <form method="POST"
+                      action="{{ url_for('like_post', post_id=post.id) }}"
+                      style="display:inline;">
+                    <button type="submit"
+                            class="community-action-btn {% if post.liked_by_me %}liked{% endif %}">
+                        ❤️ {{ post.likes }}
+                    </button>
+                </form>
+
+                {% if post.is_mine %}
+                <form method="POST"
+                      action="{{ url_for('delete_post', post_id=post.id) }}"
+                      style="display:inline;"
+                      onsubmit="return confirm('Delete this post?')">
+                    <button type="submit" class="community-action-btn" style="color:#c62828;">
+                        🗑️ Delete
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- COMMENTS -->
+        <div class="recipe-section" style="margin-top:20px;">
+            <h3>💬 Comments ({{ comments | length }})</h3>
+
+            {% if comments %}
+            <div style="margin-top:12px;">
+                {% for comment in comments %}
+                <div class="comment-card">
+                    <div class="comment-author">
+                        {% if comment.author_picture %}
+                            <img src="{{ comment.author_picture }}"
+                                 style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                        {% else %}
+                            <span>👤</span>
+                        {% endif %}
+                        <strong>{{ comment.author_username }}</strong>
+                        <span class="community-time">{{ comment.created_at }}</span>
+                    </div>
+                    <p class="comment-content">{{ comment.content }}</p>
+                    {% if comment.is_mine %}
+                    <form method="POST"
+                          action="{{ url_for('delete_comment', comment_id=comment.id) }}"
+                          onsubmit="return confirm('Delete this comment?')">
+                        <button type="submit"
+                                class="community-action-btn" style="color:#c62828; font-size:0.8rem;">
+                            🗑️ Delete
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color:#999; margin-top:12px;">No comments yet. Be the first!</p>
+            {% endif %}
+
+            <!-- ADD COMMENT -->
+            <form method="POST"
+                  action="{{ url_for('add_comment', post_id=post.id) }}"
+                  style="margin-top:16px;">
+                <textarea name="content" placeholder="Write a comment..."
+                          rows="2" required
+                          style="width:100%; padding:12px; border:1px solid #ddd;
+                                 border-radius:10px; font-size:0.9rem; resize:none;
+                                 margin-bottom:8px;"></textarea>
+                <button type="submit" class="btn">💬 Comment</button>
+            </form>
+        </div>
+
+    </div>
+
+</body>
+</html>

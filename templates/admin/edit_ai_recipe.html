@@ -2,59 +2,473 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit AI Recipe - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .nav-brand img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: .2rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .76rem;
+            font-weight: 700;
+            padding: .35rem .7rem;
+            border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+        }
+
+        .nav-links a:hover {
+            color: var(--cream);
+            background: var(--panel);
+        }
+        .nav-links a.active {
+            color: var(--sky);
+        }
+
+        .nav-links a:nth-last-child(2) {
+            color: var(--jade);
+            border: 1px solid rgba(46,204,113,.3);
+        }
+        .nav-links a:nth-last-child(2):hover {
+            background: rgba(46,204,113,.12);
+        }
+
+        .nav-links a:last-child {
+            color: var(--orange);
+            border: 1px solid rgba(255,107,53,.3);
+        }
+        .nav-links a:last-child:hover {
+            background: rgba(255,107,53,.12);
+        }
+
+        /* ── MAIN CONTAINER ── */
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2.2rem 2rem 4rem;
+        }
+
+        .main-container > h2 {
+            font-family: var(--font-display);
+            font-size: 1.7rem;
+            color: var(--cream);
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-weight: 600;
+            margin-top: 6px;
+            font-size: 0.95rem;
+        }
+
+        .subtitle i {
+            color: var(--gold);
+            margin-right: 0.4rem;
+        }
+
+        /* ── ALERTS ── */
+        .alert {
+            border-radius: 10px;
+            padding: .7rem 1rem;
+            font-size: .82rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            border: 1px solid transparent;
+        }
+        .alert.error, .alert.danger {
+            background: rgba(255,107,53,.12);
+            border-color: rgba(255,107,53,.35);
+            color: var(--orange);
+        }
+        .alert.success {
+            background: rgba(46,204,113,.1);
+            border-color: rgba(46,204,113,.3);
+            color: var(--jade);
+        }
+        .alert.info {
+            background: rgba(56,189,248,.1);
+            border-color: rgba(56,189,248,.3);
+            color: var(--sky);
+        }
+
+        /* ── FORM CARD ── */
+        .form-card {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            margin-top: 24px;
+        }
+
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--sky), var(--purple));
+            border-radius: 14px 14px 0 0;
+        }
+
+        /* ── FORM ELEMENTS ── */
+        label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--cream);
+            margin-bottom: 0.4rem;
+            margin-top: 1rem;
+        }
+
+        label:first-of-type {
+            margin-top: 0;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--cream);
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: border-color 0.15s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--sky);
+            outline: none;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--muted);
+            opacity: 0.5;
+        }
+
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238FAABB' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.8rem center;
+            padding-right: 2.2rem;
+            cursor: pointer;
+        }
+
+        select option {
+            background: var(--deep);
+            color: var(--cream);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            line-height: 1.5;
+        }
+
+        /* ── GRID LAYOUTS ── */
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 0.5rem;
+        }
+
+        /* ── SECTION HEADER ── */
+        .section-header {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            color: var(--cream);
+            margin: 1.5rem 0 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-header i {
+            color: var(--gold);
+        }
+
+        /* ── INGREDIENT ROWS ── */
+        .ingredient-row {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr 1.2fr;
+            gap: 10px;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(30, 61, 92, 0.4);
+        }
+
+        .ingredient-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .ingredient-row input {
+            margin: 0;
+        }
+
+        /* ── BUTTONS ── */
+        .btn-add-ingredient {
+            background: var(--panel);
+            border: 1px dashed var(--border);
+            color: var(--muted);
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-body);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin: 0.5rem 0 1rem;
+        }
+
+        .btn-add-ingredient:hover {
+            border-color: var(--sky);
+            color: var(--cream);
+            background: var(--deep);
+        }
+
+        .form-actions {
+            border-top: 1px solid var(--border);
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--sky), var(--purple));
+            color: #fff;
+            border: none;
+            padding: 0.6rem 2rem;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+            font-family: var(--font-body);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: scale(0.97);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 0.6rem 1.8rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            font-family: var(--font-body);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary:hover {
+            background: var(--panel);
+            color: var(--cream);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 720px) {
+            .main-container {
+                padding: 1.5rem 1rem 3rem;
+            }
+
+            .form-card {
+                padding: 1.5rem 1rem;
+            }
+
+            .form-grid-2 {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .ingredient-row {
+                grid-template-columns: 1fr;
+                gap: 6px;
+                padding: 0.7rem 0;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .ingredient-row input {
+                margin: 0;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn-primary,
+            .btn-secondary {
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
 
+    <!-- ── NAVBAR ── -->
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag Admin</div>
+        <div class="nav-brand">
+            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
+            Hapag
+        </div>
         <div class="nav-links">
             <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('admin_ai_review') }}">AI Review</a>
+            <a href="{{ url_for('admin_users') }}">Users</a>
+            <a href="{{ url_for('admin_recipes') }}">Recipes</a>
+            <a href="{{ url_for('admin_ai_review') }}" class="active">AI Review</a>
+            <a href="{{ url_for('admin_statistics') }}">Statistics</a>
+            <a href="{{ url_for('admin_evidence') }}">Evidence</a>
+            <a href="{{ url_for('dashboard') }}">Back to App</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
     </nav>
 
+    <!-- ── MAIN ── -->
     <div class="main-container">
         <h2>✏️ Edit AI-Generated Recipe</h2>
-        <p style="color:#888; margin-top:6px;">
+        <p class="subtitle">
+            <i class="fas fa-info-circle"></i>
             Fix any inaccurate prices or details before approving this recipe for your database.
         </p>
 
-        <div class="form-card" style="max-width: 700px; margin-top: 24px;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="form-card">
             <form method="POST">
+                <!-- Recipe Name -->
+                <label for="name"><i class="fas fa-utensils"></i> Recipe Name</label>
+                <input type="text" id="name" name="name" value="{{ log.name }}" required>
 
-                <label>Recipe Name</label>
-                <input type="text" name="name" value="{{ log.name }}" required>
+                <!-- Description -->
+                <label for="description"><i class="fas fa-align-left"></i> Description</label>
+                <textarea id="description" name="description" rows="3">{{ log.description }}</textarea>
 
-                <label>Description</label>
-                <textarea name="description" rows="3"
-                          style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:16px; font-size:1rem;">{{ log.description }}</textarea>
-
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <!-- Grid: Servings, Cost, Prep, Cook -->
+                <div class="form-grid-2">
                     <div>
-                        <label>Servings</label>
-                        <input type="text" name="servings" value="{{ log.servings }}">
+                        <label for="servings"><i class="fas fa-users"></i> Servings</label>
+                        <input type="text" id="servings" name="servings" value="{{ log.servings }}">
                     </div>
                     <div>
-                        <label>Estimated Total Cost</label>
-                        <input type="text" name="estimated_total_cost" value="{{ log.estimated_total_cost }}">
+                        <label for="estimated_total_cost"><i class="fas fa-coins"></i> Estimated Total Cost</label>
+                        <input type="text" id="estimated_total_cost" name="estimated_total_cost" value="{{ log.estimated_total_cost }}">
                     </div>
                     <div>
-                        <label>Prep Time</label>
-                        <input type="text" name="prep_time" value="{{ log.prep_time }}">
+                        <label for="prep_time"><i class="fas fa-clock"></i> Prep Time</label>
+                        <input type="text" id="prep_time" name="prep_time" value="{{ log.prep_time }}">
                     </div>
                     <div>
-                        <label>Cook Time</label>
-                        <input type="text" name="cook_time" value="{{ log.cook_time }}">
+                        <label for="cook_time"><i class="fas fa-clock"></i> Cook Time</label>
+                        <input type="text" id="cook_time" name="cook_time" value="{{ log.cook_time }}">
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <!-- Grid: Category, Tags -->
+                <div class="form-grid-2">
                     <div>
-                        <label>Category</label>
-                        <select name="category">
+                        <label for="category"><i class="fas fa-tag"></i> Category</label>
+                        <select id="category" name="category">
                             <option value="Pork" {% if log.category == "Pork" %}selected{% endif %}>Pork</option>
                             <option value="Chicken" {% if log.category == "Chicken" %}selected{% endif %}>Chicken</option>
                             <option value="Beef" {% if log.category == "Beef" %}selected{% endif %}>Beef</option>
@@ -67,37 +481,45 @@
                         </select>
                     </div>
                     <div>
-                        <label>Tags (comma-separated)</label>
-                        <input type="text" name="tags" value="{{ log.tags | join(', ') if log.tags else '' }}">
+                        <label for="tags"><i class="fas fa-hashtag"></i> Tags (comma-separated)</label>
+                        <input type="text" id="tags" name="tags" value="{{ log.tags | join(', ') if log.tags else '' }}">
                     </div>
                 </div>
 
-                <!-- INGREDIENTS -->
-                <h3 style="margin: 20px 0 12px;">🛒 Ingredients</h3>
+                <!-- Ingredients -->
+                <div class="section-header">
+                    <i class="fas fa-shopping-basket"></i> Ingredients
+                </div>
                 <div id="ingredients-container">
                     {% for ingredient in log.ingredients %}
                     <div class="ingredient-row">
-                        <input type="text" name="ingredient_name" value="{{ ingredient.name }}">
-                        <input type="text" name="ingredient_quantity" value="{{ ingredient.quantity }}">
-                        <input type="text" name="ingredient_price" value="{{ ingredient.estimated_price }}">
+                        <input type="text" name="ingredient_name" value="{{ ingredient.name }}" placeholder="Ingredient name">
+                        <input type="text" name="ingredient_quantity" value="{{ ingredient.quantity }}" placeholder="Quantity">
+                        <input type="text" name="ingredient_price" value="{{ ingredient.estimated_price }}" placeholder="Price">
                     </div>
                     {% endfor %}
                 </div>
-                <button type="button" onclick="addIngredient()" class="btn-secondary"
-                        style="margin-bottom:20px;">
-                    ➕ Add Ingredient
+                <button type="button" onclick="addIngredient()" class="btn-add-ingredient">
+                    <i class="fas fa-plus-circle"></i> Add Ingredient
                 </button>
 
-                <!-- INSTRUCTIONS -->
-                <label>Cooking Instructions (one step per line)</label>
-                <textarea name="instructions" rows="6"
-                          style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:16px; font-size:1rem;">{{ log.instructions | join('\n') }}</textarea>
+                <!-- Instructions -->
+                <label for="instructions"><i class="fas fa-list-ol"></i> Cooking Instructions (one step per line)</label>
+                <textarea id="instructions" name="instructions" rows="6">{{ log.instructions | join('\n') }}</textarea>
 
-                <label>Cooking Tips (optional)</label>
-                <input type="text" name="tips" value="{{ log.tips }}">
+                <!-- Cooking Tips -->
+                <label for="tips"><i class="fas fa-lightbulb"></i> Cooking Tips (optional)</label>
+                <input type="text" id="tips" name="tips" value="{{ log.tips }}" placeholder="e.g. Marinate for best results">
 
-                <button type="submit">💾 Save Changes</button>
-                <a href="{{ url_for('admin_ai_review') }}" class="btn-secondary">Cancel</a>
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <a href="{{ url_for('admin_ai_review') }}" class="btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
             </form>
         </div>
     </div>

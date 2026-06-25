@@ -2,19 +2,249 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.3rem; color: var(--gold);
+            display: flex; align-items: center; gap: .4rem;
+        }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .76rem; font-weight: 700;
+            padding: .35rem .7rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+
+        .nav-links a:hover  { color: var(--cream); background: var(--panel); }
+        .nav-links a.active { color: var(--sky); }
+
+        /* "Back to App" + "Logout" set apart visually */
+        .nav-links a:nth-last-child(2) {
+            color: var(--jade);
+            border: 1px solid rgba(46,204,113,.3);
+        }
+        .nav-links a:nth-last-child(2):hover { background: rgba(46,204,113,.12); }
+
+        .nav-links a:last-child {
+            color: var(--orange);
+            border: 1px solid rgba(255,107,53,.3);
+        }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container { max-width: 1200px; margin: 0 auto; padding: 2.2rem 2rem 4rem; }
+
+        .main-container > h2 {
+            font-family: var(--font-display);
+            font-size: 1.7rem; color: var(--cream);
+        }
+
+        /* ── ALERTS ── */
+        .alert {
+            border-radius: 10px; padding: .7rem 1rem;
+            font-size: .82rem; font-weight: 700;
+            margin-top: 1rem; border: 1px solid transparent;
+        }
+        .alert.error,.alert.danger { background:rgba(255,107,53,.12); border-color:rgba(255,107,53,.35); color:var(--orange); }
+        .alert.success { background:rgba(46,204,113,.1); border-color:rgba(46,204,113,.3); color:var(--jade); }
+        .alert.info    { background:rgba(56,189,248,.1); border-color:rgba(56,189,248,.3); color:var(--sky); }
+
+        /* ── STATS ROW ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-box {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.2rem 1.3rem;
+            position: relative; overflow: hidden;
+        }
+
+        .stat-box::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--sb-accent, var(--sky));
+            border-radius: 12px 12px 0 0;
+        }
+
+        .stat-box:nth-child(1) { --sb-accent: var(--sky); }
+        .stat-box:nth-child(2) { --sb-accent: var(--gold); }
+        .stat-box:nth-child(3) { --sb-accent: var(--jade); }
+
+        .stat-box h3 {
+            font-size: .75rem; font-weight: 800; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem;
+        }
+
+        .stat-box .stat-number {
+            font-family: var(--font-display);
+            font-size: 1.7rem; color: var(--sb-accent, var(--sky));
+        }
+
+        /* ── SECTION CARD ── */
+        .recipe-section {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.4rem;
+            position: relative; overflow: hidden;
+        }
+
+        .recipe-section::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--sky), var(--purple));
+            border-radius: 14px 14px 0 0;
+        }
+
+        .recipe-section h3 {
+            font-family: var(--font-display);
+            font-size: 1.05rem; color: var(--cream);
+        }
+
+        /* ── TABLE ── */
+        .ingredients-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .85rem;
+        }
+
+        .ingredients-table thead th {
+            text-align: left;
+            font-size: .72rem; font-weight: 800; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .06em;
+            padding: .6rem .7rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ingredients-table tbody td {
+            padding: .65rem .7rem;
+            color: var(--cream); font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ingredients-table tbody tr:last-child td { border-bottom: none; }
+        .ingredients-table tbody tr:hover { background: var(--panel); }
+
+        /* ── QUICK LINK CARDS ── */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .card {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.3rem 1.2rem;
+            cursor: pointer;
+            position: relative; overflow: hidden;
+            transition: transform .18s ease, border-color .18s;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--card-accent, var(--sky));
+            border-radius: 14px 14px 0 0;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: var(--card-accent, var(--sky));
+        }
+
+        .card:nth-child(1) { --card-accent: var(--sky); }
+        .card:nth-child(2) { --card-accent: var(--gold); }
+        .card:nth-child(3) { --card-accent: var(--purple); }
+        .card:nth-child(4) { --card-accent: var(--orange); }
+        .card:nth-child(5) { --card-accent: var(--jade); }
+
+        .card-icon { font-size: 1.7rem; margin-bottom: .55rem; }
+
+        .card h3 {
+            font-family: var(--font-display);
+            font-size: .95rem; color: var(--cream); margin-bottom: .3rem;
+        }
+
+        .card p { font-size: .78rem; color: var(--muted); font-weight: 600; line-height: 1.4; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 720px) {
+            .main-container { padding: 1.5rem 1rem 3rem; }
+            .stats-row { grid-template-columns: 1fr; }
+            .ingredients-table { display: block; overflow-x: auto; white-space: nowrap; }
+        }
+    </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag Admin</div>
+        <div class="nav-brand">
+    <img src="{{ url_for('static', filename='images/icon.png') }}"
+         alt="Hapag"
+         style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;">
+    Hapag
+</div>
         <div class="nav-links">
-            <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('admin_dashboard') }}" class="active">Dashboard</a>
             <a href="{{ url_for('admin_users') }}">Users</a>
             <a href="{{ url_for('admin_recipes') }}">Recipes</a>
             <a href="{{ url_for('admin_ai_review') }}">AI Review</a>
             <a href="{{ url_for('admin_statistics') }}">Statistics</a>
+            <a href="{{ url_for('admin_evidence') }}">Evidence</a>
             <a href="{{ url_for('dashboard') }}">Back to App</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
@@ -41,7 +271,7 @@
             </div>
             <div class="stat-box">
                 <h3>📊 Status</h3>
-                <p class="stat-number" style="font-size:1rem; color:#2e7d32;">✅ Online</p>
+                <p class="stat-number" style="font-size:1rem; color:var(--jade);">✅ Online</p>
             </div>
         </div>
 
@@ -71,29 +301,33 @@
         </div>
 
         <!-- QUICK LINKS -->
-        <!-- QUICK LINKS -->
-<div class="dashboard-cards" style="margin-top: 24px;">
-    <div class="card" onclick="window.location='{{ url_for('admin_users') }}'">
-        <div class="card-icon">👥</div>
-        <h3>Manage Users</h3>
-        <p>View and delete user accounts</p>
-    </div>
-    <div class="card" onclick="window.location='{{ url_for('admin_recipes') }}'">
-        <div class="card-icon">🍲</div>
-        <h3>Manage Recipes</h3>
-        <p>Add, edit, and delete recipes</p>
-    </div>
-    <div class="card" onclick="window.location='{{ url_for('admin_ai_review') }}'">
-        <div class="card-icon">🤖</div>
-        <h3>Review AI Recipes</h3>
-        <p>Approve or dismiss AI-generated recipes</p>
-    </div>
-    <div class="card" onclick="window.location='{{ url_for('admin_statistics') }}'">
-    <div class="card-icon">📊</div>
-    <h3>Activity Statistics</h3>
-    <p>View user activity and engagement trends</p>
-</div>
-</div>
+        <div class="dashboard-cards" style="margin-top: 24px;">
+            <div class="card" onclick="window.location='{{ url_for('admin_users') }}'">
+                <div class="card-icon"></div>
+                <h3>Manage Users</h3>
+                <p>View and delete user accounts</p>
+            </div>
+            <div class="card" onclick="window.location='{{ url_for('admin_recipes') }}'">
+                <div class="card-icon"></div>
+                <h3>Manage Recipes</h3>
+                <p>Add, edit, and delete recipes</p>
+            </div>
+            <div class="card" onclick="window.location='{{ url_for('admin_ai_review') }}'">
+                <div class="card-icon"></div>
+                <h3>Review AI Recipes</h3>
+                <p>Approve or dismiss AI-generated recipes</p>
+            </div>
+            <div class="card" onclick="window.location='{{ url_for('admin_evidence') }}'">
+                <div class="card-icon"></div>
+                <h3>Evidence Review</h3>
+                <p>Approve or reject cooking submissions</p>
+            </div>
+            <div class="card" onclick="window.location='{{ url_for('admin_statistics') }}'">
+                <div class="card-icon"></div>
+                <h3>Activity Statistics</h3>
+                <p>View user activity and engagement trends</p>
+            </div>
+        </div>
     </div>
 
 </body>

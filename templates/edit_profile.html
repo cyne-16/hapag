@@ -2,22 +2,465 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Profile - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky !important;
+            top: 0 !important;
+            left: 0 !important; right: 0 !important;
+            bottom: unset !important;
+            width: 100% !important;
+            z-index: 100 !important;
+            background: rgba(13,27,42,.95) !important;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border) !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 0 2rem !important;
+            height: 60px !important;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--gold);
+            letter-spacing: .03em;
+            text-shadow: 0 0 18px rgba(245,166,35,.5);
+        }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .78rem;
+            font-weight: 700;
+            padding: .35rem .75rem;
+            border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+        }
+
+        .nav-links a:hover { color: var(--cream); background: var(--panel); }
+
+        .nav-links a:last-child {
+            color: var(--orange);
+            border: 1px solid rgba(255,107,53,.3);
+        }
+
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem 4rem;
+        }
+
+        /* ── PAGE TITLE ── */
+        .page-title {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            color: var(--cream);
+            margin-bottom: .3rem;
+        }
+
+        .page-sub {
+            font-size: .82rem;
+            color: var(--muted);
+            font-weight: 600;
+            margin-bottom: 1.8rem;
+        }
+
+        /* ── FLASH ── */
+        .alert {
+            border-radius: 10px;
+            padding: .7rem 1rem;
+            font-size: .82rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            border: 1px solid transparent;
+        }
+
+        .alert.error, .alert.danger { background: rgba(255,107,53,.12); border-color: rgba(255,107,53,.35); color: var(--orange); }
+        .alert.success              { background: rgba(46,204,113,.1);  border-color: rgba(46,204,113,.3);  color: var(--jade); }
+        .alert.info                 { background: rgba(56,189,248,.1);  border-color: rgba(56,189,248,.3);  color: var(--sky); }
+
+        /* ── TOGGLE PILL ── */
+        .tab-toggle {
+            display: inline-flex;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 5px;
+            gap: 4px;
+            margin-bottom: 1.8rem;
+        }
+
+        .tab-toggle-btn {
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            padding: .55rem 1.3rem;
+            font-family: var(--font-body);
+            font-size: .82rem;
+            font-weight: 800;
+            color: var(--muted);
+            cursor: pointer;
+            transition: background .2s, color .2s, box-shadow .2s;
+            letter-spacing: .03em;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            white-space: nowrap;
+        }
+
+        .tab-toggle-btn.active {
+            background: var(--deep);
+            color: var(--cream);
+            box-shadow: 0 2px 8px rgba(0,0,0,.3);
+        }
+
+        .tab-toggle-btn.active.profile-tab  { border: 1px solid var(--sky);  color: var(--sky); }
+        .tab-toggle-btn.active.password-tab { border: 1px solid var(--gold); color: var(--gold); }
+
+        /* ── TAB CONTENT ── */
+        .edit-tab-content { display: block; }
+        .edit-tab-content.hidden { display: none; }
+
+        /* ── FORM CARD ── */
+        .form-card {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 1.8rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-card.profile-card-styled::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--sky), #0ea5e9);
+            border-radius: 18px 18px 0 0;
+        }
+
+        .form-card.password-card-styled::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--orange));
+            border-radius: 18px 18px 0 0;
+        }
+
+        /* ── AVATAR SECTION ── */
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: .6rem;
+            margin-bottom: 1.6rem;
+            padding-bottom: 1.4rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .avatar-preview {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--gold);
+            box-shadow: 0 0 0 4px rgba(245,166,35,.2), 0 0 20px rgba(245,166,35,.2);
+        }
+
+        .avatar-fallback {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: var(--panel);
+            border: 3px solid var(--gold);
+            box-shadow: 0 0 0 4px rgba(245,166,35,.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+        }
+
+        .avatar-upload-label {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: .78rem;
+            font-weight: 700;
+            padding: .4rem .9rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color .2s, color .2s;
+        }
+
+        .avatar-upload-label:hover { border-color: var(--sky); color: var(--cream); }
+
+        .avatar-upload-label input[type="file"] { display: none; }
+
+        .avatar-hint {
+            font-size: .7rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        /* ── FORM FIELDS ── */
+        .field-group { margin-bottom: 1.1rem; }
+
+        .field-label {
+            display: block;
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: .4rem;
+        }
+
+        .field-wrap { position: relative; }
+
+        .field-icon {
+            position: absolute;
+            left: .9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: .9rem;
+            pointer-events: none;
+        }
+
+        .form-card input[type="text"],
+        .form-card input[type="email"],
+        .form-card input[type="password"] {
+            width: 100%;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: .78rem .9rem .78rem 2.6rem;
+            color: var(--cream);
+            font-family: var(--font-body);
+            font-size: .88rem;
+            font-weight: 600;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .form-card input[type="text"]:focus,
+        .form-card input[type="email"]:focus,
+        .form-card input[type="password"]:focus {
+            border-color: var(--sky);
+            box-shadow: 0 0 0 3px rgba(56,189,248,.15);
+        }
+
+        .password-card-styled input[type="password"]:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(245,166,35,.15);
+        }
+
+        .form-card input:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        /* password toggle button */
+        .pw-toggle {
+            position: absolute;
+            right: .7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--muted);
+            padding: .2rem;
+            transition: color .2s;
+        }
+
+        .pw-toggle:hover { color: var(--cream); }
+
+        /* password field has toggle so needs right padding */
+        .has-toggle input { padding-right: 2.6rem; }
+
+        /* ── STRENGTH BAR ── */
+        .strength-wrap {
+            margin-top: .5rem;
+            display: none;
+        }
+
+        .strength-track {
+            background: var(--border);
+            border-radius: 99px;
+            height: 6px;
+            overflow: hidden;
+        }
+
+        .strength-fill {
+            height: 100%;
+            border-radius: 99px;
+            width: 0%;
+            transition: width .3s, background .3s;
+        }
+
+        .strength-text {
+            font-size: .72rem;
+            font-weight: 700;
+            margin-top: .3rem;
+            color: var(--muted);
+        }
+
+        /* ── MATCH TEXT ── */
+        .match-text {
+            font-size: .75rem;
+            font-weight: 700;
+            margin-top: .35rem;
+            min-height: 1rem;
+        }
+
+        /* ── DIVIDER ── */
+        .form-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 1.3rem 0;
+        }
+
+        /* ── BUTTONS ── */
+        .btn-save {
+            width: 100%;
+            background: linear-gradient(135deg, var(--sky), #0ea5e9);
+            color: var(--night);
+            border: none;
+            border-radius: 10px;
+            padding: .85rem;
+            font-family: var(--font-display);
+            font-size: 1rem;
+            letter-spacing: .04em;
+            cursor: pointer;
+            transition: transform .18s, box-shadow .18s, filter .18s;
+            box-shadow: 0 4px 18px rgba(56,189,248,.25);
+            margin-bottom: .7rem;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(56,189,248,.4);
+            filter: brightness(1.08);
+        }
+
+        .btn-pw-change {
+            width: 100%;
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            color: var(--night);
+            border: none;
+            border-radius: 10px;
+            padding: .85rem;
+            font-family: var(--font-display);
+            font-size: 1rem;
+            letter-spacing: .04em;
+            cursor: pointer;
+            transition: transform .18s, box-shadow .18s, filter .18s;
+            box-shadow: 0 4px 18px rgba(245,166,35,.25);
+            margin-bottom: .7rem;
+        }
+
+        .btn-pw-change:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(245,166,35,.4);
+            filter: brightness(1.08);
+        }
+
+        .btn-cancel {
+            display: block;
+            text-align: center;
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            text-decoration: none;
+            font-family: var(--font-body);
+            font-size: .82rem;
+            font-weight: 700;
+            padding: .7rem;
+            border-radius: 10px;
+            transition: border-color .2s, color .2s;
+        }
+
+        .btn-cancel:hover { border-color: var(--muted); color: var(--cream); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 480px) {
+            .main-container { padding: 1.5rem 1rem 3rem; }
+            .tab-toggle { width: 100%; }
+            .tab-toggle-btn { flex: 1; justify-content: center; }
+        }
+    </style>
 </head>
 <body>
 
+    <!-- NAVBAR -->
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-brand">
+    <img src="{{ url_for('static', filename='images/icon.png') }}"
+         alt="Hapag"
+         style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;">
+    Hapag
+</div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Recipes</a>
+            <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('community') }}">Community</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
             <a href="{{ url_for('profile') }}">Profile</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
         </div>
     </nav>
 
     <div class="main-container">
-        <h2>Edit Profile</h2>
+
+        <h1 class="page-title">⚙️ Edit Profile</h1>
+        <p class="page-sub">Update your info or change your password</p>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category, message in messages %}
@@ -25,31 +468,219 @@
             {% endfor %}
         {% endwith %}
 
-        <div class="form-card">
-            <form method="POST" enctype="multipart/form-data">
-
-    <label>Profile Picture</label>
-    <div style="text-align:center; margin-bottom:16px;">
-        {% if user.profile_picture %}
-            <img src="{{ user.profile_picture }}" alt="Profile"
-                 style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin-bottom:10px;">
-        {% else %}
-            <div style="font-size:4rem; margin-bottom:10px;">👤</div>
-        {% endif %}
-        <input type="file" name="profile_picture" accept="image/*">
-    </div>
-
-    <label>Username</label>
-    <input type="text" name="username" value="{{ user.username }}" required>
-
-    <label>Email (cannot be changed)</label>
-    <input type="email" value="{{ user.email }}" disabled>
-
-    <button type="submit">Save Changes</button>
-    <a href="{{ url_for('profile') }}" class="btn-secondary">Cancel</a>
-</form>
+        <!-- TOGGLE PILL -->
+        <div class="tab-toggle">
+            <button class="tab-toggle-btn profile-tab {% if active_tab == 'profile' or not active_tab %}active{% endif %}"
+                    onclick="switchTab('profile', this)">
+                👤 Personal Info
+            </button>
+            <button class="tab-toggle-btn password-tab {% if active_tab == 'password' %}active{% endif %}"
+                    onclick="switchTab('password', this)">
+                🔒 Change Password
+            </button>
         </div>
+
+        <!-- TAB: PERSONAL INFO -->
+        <div id="tab-profile"
+             class="edit-tab-content {% if active_tab == 'password' %}hidden{% endif %}">
+
+            <div class="form-card profile-card-styled">
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="update_profile">
+
+                    <!-- AVATAR -->
+                    <div class="avatar-section">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture }}" alt="Profile" class="avatar-preview" id="avatarPreview">
+                        {% else %}
+                            <div class="avatar-fallback" id="avatarPreview"></div>
+                        {% endif %}
+
+                        <label class="avatar-upload-label">
+                            📷 Change Photo
+                            <input type="file" name="profile_picture" accept="image/*"
+                                   onchange="previewAvatar(this)">
+                        </label>
+                        <span class="avatar-hint">Max 2MB · JPG, PNG, or GIF</span>
+                    </div>
+
+                    <!-- USERNAME -->
+                    <div class="field-group">
+                        <label class="field-label" for="username">Username</label>
+                        <div class="field-wrap">
+                            <span class="field-icon"></span>
+                            <input type="text" id="username" name="username"
+                                   value="{{ user.username }}" required>
+                        </div>
+                    </div>
+
+                    <!-- EMAIL (disabled) -->
+                    <div class="field-group">
+                        <label class="field-label">Email (cannot be changed)</label>
+                        <div class="field-wrap">
+                            <span class="field-icon"></span>
+                            <input type="email" value="{{ user.email }}" disabled>
+                        </div>
+                    </div>
+
+                    <div class="form-divider"></div>
+
+                    <button type="submit" class="btn-save">Save Changes</button>
+                    <a href="{{ url_for('profile') }}" class="btn-cancel">Cancel</a>
+                </form>
+            </div>
+        </div>
+
+        <!-- TAB: CHANGE PASSWORD -->
+        <div id="tab-password"
+             class="edit-tab-content {% if active_tab != 'password' %}hidden{% endif %}">
+
+            <div class="form-card password-card-styled">
+                <form method="POST">
+                    <input type="hidden" name="action" value="change_password">
+
+                    <!-- CURRENT PASSWORD -->
+                    <div class="field-group">
+                        <label class="field-label" for="currentPassword">Current Password</label>
+                        <div class="field-wrap has-toggle">
+                            <span class="field-icon"></span>
+                            <input type="password" name="current_password"
+                                   id="currentPassword"
+                                   placeholder="Enter your current password" required>
+                            <button type="button" class="pw-toggle"
+                                    onclick="togglePassword('currentPassword', this)"></button>
+                        </div>
+                    </div>
+
+                    <!-- NEW PASSWORD -->
+                    <div class="field-group">
+                        <label class="field-label" for="newPassword">New Password</label>
+                        <div class="field-wrap has-toggle">
+                            <span class="field-icon"></span>
+                            <input type="password" name="new_password"
+                                   id="newPassword"
+                                   placeholder="At least 6 characters" required
+                                   oninput="checkStrength(this.value)">
+                            <button type="button" class="pw-toggle"
+                                    onclick="togglePassword('newPassword', this)">👁️</button>
+                        </div>
+                        <!-- STRENGTH BAR -->
+                        <div class="strength-wrap" id="strengthBar">
+                            <div class="strength-track">
+                                <div class="strength-fill" id="strengthFill"></div>
+                            </div>
+                            <p class="strength-text" id="strengthText"></p>
+                        </div>
+                    </div>
+
+                    <!-- CONFIRM PASSWORD -->
+                    <div class="field-group">
+                        <label class="field-label" for="confirmPassword">Confirm New Password</label>
+                        <div class="field-wrap has-toggle">
+                            <span class="field-icon"></span>
+                            <input type="password" name="confirm_password"
+                                   id="confirmPassword"
+                                   placeholder="Re-enter new password" required
+                                   oninput="checkMatch()">
+                            <button type="button" class="pw-toggle"
+                                    onclick="togglePassword('confirmPassword', this)">👁️</button>
+                        </div>
+                        <p class="match-text" id="matchText"></p>
+                    </div>
+
+                    <div class="form-divider"></div>
+
+                    <button type="submit" class="btn-pw-change"> Change Password</button>
+                    <a href="{{ url_for('profile') }}" class="btn-cancel">Cancel</a>
+                </form>
+            </div>
+        </div>
+
     </div>
+
+    <script>
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.edit-tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-toggle-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.remove('hidden');
+            btn.classList.add('active');
+        }
+
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '';
+            } else {
+                input.type = 'password';
+                btn.textContent = '';
+            }
+        }
+
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const preview = document.getElementById('avatarPreview');
+                    // replace fallback div with img or update existing img
+                    if (preview.tagName === 'DIV') {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'avatar-preview';
+                        img.id = 'avatarPreview';
+                        preview.replaceWith(img);
+                    } else {
+                        preview.src = e.target.result;
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function checkStrength(value) {
+            const bar = document.getElementById('strengthBar');
+            const fill = document.getElementById('strengthFill');
+            const text = document.getElementById('strengthText');
+            bar.style.display = 'block';
+
+            let score = 0;
+            if (value.length >= 6)           score++;
+            if (value.length >= 10)          score++;
+            if (/[A-Z]/.test(value))         score++;
+            if (/[0-9]/.test(value))         score++;
+            if (/[^A-Za-z0-9]/.test(value))  score++;
+
+            const levels = [
+                { label: 'Very Weak',   color: '#ef5350', width: '20%' },
+                { label: 'Weak',        color: '#ff7043', width: '40%' },
+                { label: 'Fair',        color: '#ffa726', width: '60%' },
+                { label: 'Strong',      color: '#66bb6a', width: '80%' },
+                { label: 'Very Strong', color: '#43a047', width: '100%' }
+            ];
+
+            const lv = levels[Math.min(score, 4)];
+            fill.style.width      = lv.width;
+            fill.style.background = lv.color;
+            text.textContent      = `Password strength: ${lv.label}`;
+            text.style.color      = lv.color;
+        }
+
+        function checkMatch() {
+            const newPw     = document.getElementById('newPassword').value;
+            const confirmPw = document.getElementById('confirmPassword').value;
+            const matchText = document.getElementById('matchText');
+
+            if (!confirmPw) { matchText.textContent = ''; return; }
+
+            if (newPw === confirmPw) {
+                matchText.textContent = '✅ Passwords match';
+                matchText.style.color = '#43a047';
+            } else {
+                matchText.textContent = '❌ Passwords do not match';
+                matchText.style.color = '#ef5350';
+            }
+        }
+    </script>
 
 </body>
 </html>

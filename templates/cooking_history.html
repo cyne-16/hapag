@@ -2,36 +2,468 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cooking History - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .nav-brand img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: .2rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .76rem;
+            font-weight: 700;
+            padding: .35rem .7rem;
+            border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+        }
+
+        .nav-links a:hover {
+            color: var(--cream);
+            background: var(--panel);
+        }
+        .nav-links a.active {
+            color: var(--sky);
+        }
+
+        .nav-links a:last-child {
+            color: var(--orange);
+            border: 1px solid rgba(255,107,53,.3);
+        }
+        .nav-links a:last-child:hover {
+            background: rgba(255,107,53,.12);
+        }
+
+        /* ── MAIN CONTAINER ── */
+        .main-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2.2rem 2rem 4rem;
+        }
+
+        .main-container > h2 {
+            font-family: var(--font-display);
+            font-size: 1.7rem;
+            color: var(--cream);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .main-container > h2 i {
+            color: var(--gold);
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-weight: 600;
+            margin-top: 6px;
+            font-size: 0.95rem;
+        }
+
+        .subtitle i {
+            color: var(--gold);
+            margin-right: 0.3rem;
+        }
+
+        /* ── SECTION CARD ── */
+        .recipe-section {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            margin-top: 24px;
+        }
+
+        .recipe-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--sky), var(--purple));
+            border-radius: 14px 14px 0 0;
+        }
+
+        .recipe-section h3 {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            color: var(--cream);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .recipe-section h3 i {
+            color: var(--gold);
+        }
+
+        /* ── MOST COOKED LIST ── */
+        .most-cooked-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .most-cooked-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            background: var(--panel);
+            border-radius: 8px;
+            border-left: 3px solid var(--gold);
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .most-cooked-item:hover {
+            background: rgba(56,189,248,0.05);
+            transform: translateX(4px);
+        }
+
+        .most-cooked-item a {
+            color: var(--cream);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .most-cooked-item a:hover {
+            color: var(--sky);
+        }
+
+        .most-cooked-item a i {
+            color: var(--gold);
+            font-size: 0.8rem;
+        }
+
+        .cook-count {
+            font-weight: 700;
+            color: var(--gold);
+            font-size: 0.85rem;
+            background: rgba(245,166,35,0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        /* ── HISTORY LIST ── */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            background: var(--panel);
+            border-radius: 8px;
+            transition: background 0.2s, transform 0.2s;
+            border-left: 3px solid var(--jade);
+        }
+
+        .history-item:hover {
+            background: rgba(46,204,113,0.05);
+            transform: translateX(4px);
+        }
+
+        .history-info {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .history-info a {
+            color: var(--cream);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .history-info a:hover {
+            color: var(--sky);
+        }
+
+        .history-info a i {
+            color: var(--gold);
+            font-size: 0.9rem;
+        }
+
+        .history-date {
+            color: var(--muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .history-date i {
+            font-size: 0.7rem;
+        }
+
+        .history-points {
+            font-weight: 800;
+            color: var(--jade);
+            font-size: 0.85rem;
+            background: rgba(46,204,113,0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .empty-state p:last-of-type {
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .empty-state .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, var(--sky), var(--purple));
+            color: #fff;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-decoration: none;
+            padding: 0.6rem 1.8rem;
+            border-radius: 30px;
+            letter-spacing: .03em;
+            transition: opacity .18s, transform .18s;
+            border: none;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .empty-state .btn:hover {
+            opacity: .88;
+            transform: translateY(-2px);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 720px) {
+            .main-container {
+                padding: 1.5rem 1rem 3rem;
+            }
+
+            .main-container > h2 {
+                font-size: 1.4rem;
+            }
+
+            .history-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.4rem;
+            }
+
+            .history-info {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .history-points {
+                align-self: flex-end;
+            }
+
+            .most-cooked-item {
+                flex-wrap: wrap;
+                gap: 0.3rem;
+            }
+
+            .most-cooked-item a {
+                font-size: 0.85rem;
+            }
+
+            .cook-count {
+                font-size: 0.75rem;
+            }
+
+            .history-date {
+                font-size: 0.7rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar {
+                padding: 0 1rem;
+                height: auto;
+                min-height: 50px;
+                flex-wrap: wrap;
+            }
+
+            .nav-links a {
+                font-size: 0.65rem;
+                padding: 0.25rem 0.5rem;
+            }
+
+            .recipe-section {
+                padding: 1rem;
+            }
+
+            .recipe-section h3 {
+                font-size: 0.95rem;
+            }
+
+            .empty-state .empty-icon {
+                font-size: 3rem;
+            }
+        }
+    </style>
 </head>
 <body>
 
+    <!-- ── NAVBAR ── -->
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-brand">
+            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
+            Hapag
+        </div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard') }}">Home</a>
-            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('recommend') }}">Recipes</a>
             <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('community') }}">Community</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
             <a href="{{ url_for('profile') }}">Profile</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
         </div>
     </nav>
 
+    <!-- ── MAIN ── -->
     <div class="main-container">
-        <h2>📖 My Cooking History</h2>
+        <h2>
+            <i class="fas fa-book-open"></i> My Cooking History
+        </h2>
+        <p class="subtitle">
+            <i class="fas fa-info-circle"></i>
+            Track your culinary journey — every dish you've cooked.
+        </p>
 
         {% if most_cooked %}
         <!-- MOST COOKED -->
-        <div class="recipe-section" style="margin-top: 24px;">
-            <h3>🏆 Most Cooked Recipes</h3>
+        <div class="recipe-section">
+            <h3>
+                <i class="fas fa-trophy" style="color: var(--gold);"></i>
+                Most Cooked Recipes
+            </h3>
             <div class="most-cooked-list">
                 {% for name, count in most_cooked %}
                 <div class="most-cooked-item">
                     <a href="{{ url_for('recipe_detail', recipe_name=name) }}">
+                        <i class="fas fa-utensils"></i>
                         {{ name }}
                     </a>
-                    <span class="cook-count">🍳 Cooked {{ count }}x</span>
+                    <span class="cook-count">
+                        <i class="fas fa-fire"></i>
+                        Cooked {{ count }}x
+                    </span>
                 </div>
                 {% endfor %}
             </div>
@@ -40,32 +472,66 @@
 
         {% if history %}
         <!-- FULL HISTORY -->
-        <div class="recipe-section" style="margin-top: 24px;">
-            <h3>📅 All Cooking Activity</h3>
+        <div class="recipe-section">
+            <h3>
+                <i class="fas fa-list-ul" style="color: var(--sky);"></i>
+                All Cooking Activity
+            </h3>
             <div class="history-list">
                 {% for item in history %}
                 <div class="history-item">
                     <div class="history-info">
                         <a href="{{ url_for('recipe_detail', recipe_name=item.name) }}">
-                            🍲 {{ item.name }}
+                            <i class="fas fa-utensils"></i>
+                            {{ item.name }}
                         </a>
-                        <span class="history-date">📅 {{ item.date }}</span>
+                        <span class="history-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            {{ item.date }}
+                        </span>
                     </div>
-                    <span class="history-points">+10 pts</span>
+                    <span class="history-points">
+                        <i class="fas fa-star"></i>
+                        +10 pts
+                    </span>
                 </div>
                 {% endfor %}
             </div>
         </div>
         {% else %}
-            <div class="empty-state">
-                <p>📖 No cooking history yet.</p>
-                <p>Cook a recipe and mark it as done to track your history!</p>
-                <a href="{{ url_for('recommend') }}" class="btn" style="margin-top:16px;">
-                    Find Recipes
-                </a>
-            </div>
+        <div class="empty-state">
+            <span class="empty-icon">📖</span>
+            <p>No cooking history yet.</p>
+            <p>Cook a recipe and mark it as done to track your history!</p>
+            <a href="{{ url_for('recommend') }}" class="btn">
+                <i class="fas fa-search"></i> Find Recipes
+            </a>
+        </div>
         {% endif %}
 
+        <!-- ── STATS SUMMARY (optional) ── -->
+        {% if history %}
+        <div class="recipe-section" style="border-left: 4px solid var(--gold);">
+            <h3 style="margin-bottom: 0.5rem;">
+                <i class="fas fa-chart-line" style="color: var(--jade);"></i>
+                Cooking Summary
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.8rem; margin-top: 0.5rem;">
+                <div style="background: var(--panel); padding: 0.6rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 1.2rem; font-weight: 800; color: var(--cream);">{{ history|length }}</div>
+                    <div style="font-size: 0.7rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Total Dishes</div>
+                </div>
+                <div style="background: var(--panel); padding: 0.6rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 1.2rem; font-weight: 800; color: var(--gold);">{{ most_cooked|length if most_cooked else 0 }}</div>
+                    <div style="font-size: 0.7rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Unique Dishes</div>
+                </div>
+                <div style="background: var(--panel); padding: 0.6rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 1.2rem; font-weight: 800; color: var(--jade);">{{ history|length * 10 }}</div>
+                    <div style="font-size: 0.7rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Total Points</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
 </body>

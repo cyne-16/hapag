@@ -2,75 +2,435 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="See who's leading the kitchen — weekly and all-time cooking leaderboards on Hapag.">
     <title>Leaderboard - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.5rem; color: var(--gold);
+            text-shadow: 0 0 18px rgba(245,166,35,.5);
+            display: flex; align-items: center; gap: .4rem;
+        }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .78rem; font-weight: 700;
+            padding: .35rem .75rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+
+        .nav-links a:hover  { color: var(--cream); background: var(--panel); }
+        .nav-links a.active { color: var(--jade); }
+        .nav-links a:last-child { color: var(--orange); border: 1px solid rgba(255,107,53,.3); }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container { max-width: 900px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+        .main-container > h2 {
+            font-family: var(--font-display);
+            font-size: 2rem; color: var(--cream); margin-bottom: .3rem;
+        }
+
+        /* ── VIEW TOGGLE TABS ── */
+        .view-toggle {
+            display: flex; gap: .4rem;
+            margin: 1.4rem 0;
+            padding: .3rem;
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: fit-content;
+        }
+
+        .view-toggle a {
+            text-decoration: none;
+            font-family: var(--font-body);
+            font-weight: 800;
+            font-size: .85rem;
+            padding: .55rem 1.2rem;
+            border-radius: 9px;
+            transition: all .2s ease;
+            color: var(--muted);
+        }
+
+        .view-toggle a:hover { color: var(--cream); background: var(--panel); }
+
+        .view-toggle a.tab-active {
+            color: var(--night);
+            background: linear-gradient(135deg, var(--jade), #00d084);
+            box-shadow: 0 3px 12px rgba(46,204,113,.25);
+        }
+
+        /* ── YOUR RANK BANNER ── */
+        .your-rank-banner {
+            display: flex; align-items: center; gap: .5rem;
+            padding: 1.1rem 1.4rem;
+            border-radius: 14px;
+            font-size: .9rem; font-weight: 700;
+            color: var(--cream);
+            background: var(--deep);
+            border: 1px solid var(--border);
+            margin-bottom: 1.4rem;
+            position: relative; overflow: hidden;
+        }
+
+        .your-rank-banner::before {
+            content: '';
+            position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+            background: linear-gradient(180deg, var(--jade), #00d084);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .your-rank-banner strong {
+            font-family: var(--font-display);
+            font-size: 1.05rem; color: var(--jade);
+        }
+
+        .your-rank-banner.rank-unranked::before { background: linear-gradient(180deg, var(--gold), #FFD66B); }
+
+        /* ── LEADERBOARD LIST ── */
+        .leaderboard-list { display: flex; flex-direction: column; gap: .55rem; }
+
+        .leaderboard-row {
+            display: flex; align-items: center; gap: 1rem;
+            padding: .9rem 1.1rem;
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            transition: border-color .2s, transform .2s;
+        }
+
+        .leaderboard-row:hover { border-color: var(--sky); transform: translateX(2px); }
+
+        /* Top 3 special styling */
+        .leaderboard-row:nth-child(1) { background: rgba(255,107,53,.06); border-color: rgba(255,107,53,.2); }
+        .leaderboard-row:nth-child(1):hover { border-color: rgba(255,107,53,.4); }
+
+        .leaderboard-row:nth-child(2) { background: rgba(245,166,35,.05); border-color: rgba(245,166,35,.18); }
+        .leaderboard-row:nth-child(2):hover { border-color: rgba(245,166,35,.35); }
+
+        .leaderboard-row:nth-child(3) { background: rgba(168,85,247,.05); border-color: rgba(168,85,247,.18); }
+        .leaderboard-row:nth-child(3):hover { border-color: rgba(168,85,247,.35); }
+
+        /* Highlighted "You" row */
+        .leaderboard-row.leaderboard-you { background: rgba(46,204,113,.07); border-color: rgba(46,204,113,.35); }
+        .leaderboard-row.leaderboard-you:hover { border-color: var(--jade); }
+
+        /* ── RANK COLUMN ── */
+        .leaderboard-rank {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-display);
+            font-size: 1.05rem;
+            border-radius: 10px;
+            flex-shrink: 0;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .leaderboard-row:nth-child(1) .leaderboard-rank {
+            background: linear-gradient(135deg, var(--orange), var(--gold));
+            border: none; color: var(--night); font-size: 1.3rem;
+            box-shadow: 0 3px 12px rgba(255,107,53,.3);
+        }
+
+        .leaderboard-row:nth-child(2) .leaderboard-rank {
+            background: linear-gradient(135deg, #C0C0C0, #E8E8E8);
+            border: none; color: #333; font-size: 1.3rem;
+            box-shadow: 0 3px 12px rgba(192,192,192,.3);
+        }
+
+        .leaderboard-row:nth-child(3) .leaderboard-rank {
+            background: linear-gradient(135deg, #CD7F32, #E8A860);
+            border: none; color: #2A1A00; font-size: 1.3rem;
+            box-shadow: 0 3px 12px rgba(205,127,50,.3);
+        }
+
+        /* ── NAME COLUMN ── */
+        .leaderboard-name {
+            flex: 1;
+            font-family: var(--font-body);
+            font-weight: 800; font-size: .95rem; color: var(--cream);
+            display: flex; align-items: center; gap: .6rem;
+        }
+
+        .you-tag {
+            font-size: .65rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: .08em;
+            padding: .15rem .6rem; border-radius: 99px;
+            color: var(--jade);
+            background: rgba(46,204,113,.1);
+            border: 1px solid rgba(46,204,113,.3);
+        }
+
+        /* ── POINTS COLUMN ── */
+        .leaderboard-points {
+            font-family: var(--font-display);
+            font-size: .95rem; color: var(--gold);
+            white-space: nowrap;
+        }
+
+        .leaderboard-row:nth-child(1) .leaderboard-points { font-size: 1.05rem; color: var(--orange); }
+
+        /* ── PODIUM ── */
+        .podium {
+            display: flex; justify-content: center; align-items: flex-end;
+            gap: 1rem; margin-bottom: 1.8rem; padding: 1rem 0 0;
+        }
+
+        .podium-slot {
+            display: flex; flex-direction: column; align-items: center; gap: .6rem;
+            padding: 1.2rem 1.4rem;
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            transition: transform .2s ease;
+            min-width: 130px;
+            position: relative; overflow: hidden;
+        }
+
+        .podium-slot::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .podium-slot:hover { transform: translateY(-3px); }
+
+        .podium-slot.podium-1 { order: 2; padding-bottom: 1.6rem; border-color: rgba(255,107,53,.25); }
+        .podium-slot.podium-1::before { background: linear-gradient(90deg, var(--orange), var(--gold)); }
+
+        .podium-slot.podium-2 { order: 1; border-color: rgba(192,192,192,.2); }
+        .podium-slot.podium-2::before { background: linear-gradient(90deg, #B0B0B0, #D8D8D8); }
+
+        .podium-slot.podium-3 { order: 3; border-color: rgba(205,127,50,.2); }
+        .podium-slot.podium-3::before { background: linear-gradient(90deg, #CD7F32, #E8A860); }
+
+        .podium-medal { font-size: 2.1rem; line-height: 1; }
+        .podium-slot.podium-1 .podium-medal { font-size: 2.6rem; }
+
+        .podium-name {
+            font-family: var(--font-display);
+            font-size: .88rem; color: var(--cream);
+            text-align: center; max-width: 120px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        .podium-pts {
+            font-family: var(--font-body);
+            font-weight: 800; font-size: .82rem;
+            padding: .25rem .85rem; border-radius: 99px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .podium-slot.podium-1 .podium-pts {
+            background: linear-gradient(135deg, var(--orange), var(--gold));
+            color: var(--night); border: none;
+        }
+
+        .podium-slot.podium-2 .podium-pts { color: #D0D0D0; }
+        .podium-slot.podium-3 .podium-pts { color: #E8A860; }
+
+        /* ── DIVIDER ── */
+        .leaderboard-divider { display: flex; align-items: center; gap: .8rem; margin-bottom: 1.2rem; }
+
+        .leaderboard-divider::before,
+        .leaderboard-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        .leaderboard-divider span {
+            font-size: .7rem; font-weight: 800; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .12em;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center; padding: 3rem 1.2rem;
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px; margin-top: 1.2rem;
+        }
+
+        .empty-state p { color: var(--muted); font-size: .9rem; font-weight: 600; }
+        .empty-state .empty-icon { font-size: 2.4rem; display: block; margin-bottom: .7rem; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .main-container { padding: 1.5rem 1rem 3rem; }
+            .podium { gap: .6rem; }
+            .podium-slot { min-width: 100px; padding: 1rem .9rem; }
+            .podium-medal { font-size: 1.6rem; }
+            .podium-slot.podium-1 .podium-medal { font-size: 2rem; }
+            .podium-name { font-size: .8rem; max-width: 80px; }
+            .podium-pts { font-size: .75rem; padding: .2rem .65rem; }
+            .leaderboard-row { padding: .7rem .9rem; gap: .7rem; }
+            .leaderboard-rank { width: 38px; height: 38px; font-size: .9rem; }
+            .leaderboard-name { font-size: .87rem; }
+            .leaderboard-points { font-size: .85rem; }
+        }
+
+        @media (max-width: 480px) {
+            .podium { flex-direction: column; align-items: center; }
+            .podium-slot {
+                order: unset !important;
+                width: 100%; flex-direction: row;
+                min-width: unset; padding: .9rem 1.1rem; gap: .9rem;
+            }
+            .podium-name { max-width: unset; }
+            .your-rank-banner { font-size: .85rem; padding: .9rem 1.1rem; }
+        }
+    </style>
 </head>
 <body>
 
+    <!-- ===== NAVBAR ===== -->
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag</div>
+       <div class="nav-brand">
+    <img src="{{ url_for('static', filename='images/icon.png') }}"
+         alt="Hapag"
+         style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;">
+    Hapag
+</div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard') }}">Home</a>
-            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('recommend') }}">Recipes</a>
             <a href="{{ url_for('challenges') }}">Challenges</a>
             <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
-            <a href="{{ url_for('household') }}">Household</a>
+            <a href="{{ url_for('community') }}">Community</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
             <a href="{{ url_for('profile') }}">Profile</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
         </div>
     </nav>
 
+    <!-- ===== MAIN CONTENT ===== -->
     <div class="main-container">
         <h2>🏆 Leaderboard</h2>
 
-        <!-- TOGGLE -->
-        <div style="display:flex; gap:10px; margin: 20px 0;">
+        <!-- View Toggle -->
+        <div class="view-toggle">
             <a href="{{ url_for('leaderboard', view='weekly') }}"
-               class="{{ 'btn' if view == 'weekly' else 'btn-secondary' }}">
+               class="{{ 'tab-active' if view == 'weekly' else '' }}">
                 📅 This Week
             </a>
             <a href="{{ url_for('leaderboard', view='alltime') }}"
-               class="{{ 'btn' if view == 'alltime' else 'btn-secondary' }}">
+               class="{{ 'tab-active' if view == 'alltime' else '' }}">
                 ⭐ All-Time
             </a>
         </div>
 
+        <!-- Your Rank Banner -->
         {% if user_rank %}
         <div class="your-rank-banner">
-            Your Rank: <strong>#{{ user_rank }}</strong> with {{ user_points }} points
+            🎖️ Your Rank: <strong>#{{ user_rank }}</strong> &nbsp;with {{ user_points }} points
             {% if view == "weekly" %}this week{% endif %}
         </div>
         {% else %}
-        <div class="your-rank-banner" style="background:#fff3e0; color:#7a6000;">
-            You're not in the top 20 yet — keep cooking to climb the ranks!
+        <div class="your-rank-banner rank-unranked">
+            🔥 You're not in the top 20 yet — keep cooking to climb the ranks!
         </div>
         {% endif %}
 
-        <div class="recipe-section" style="margin-top:20px;">
-            {% if rankings %}
-            <div class="leaderboard-list">
-                {% for entry in rankings %}
-                <div class="leaderboard-row {% if entry._id == current_username %}leaderboard-you{% endif %}">
-                    <div class="leaderboard-rank">
-                        {% if loop.index == 1 %}🥇
-                        {% elif loop.index == 2 %}🥈
-                        {% elif loop.index == 3 %}🥉
-                        {% else %}#{{ loop.index }}{% endif %}
-                    </div>
-                    <div class="leaderboard-name">
-                        {{ entry._id }}
-                        {% if entry._id == current_username %}<span class="you-tag">You</span>{% endif %}
-                    </div>
-                    <div class="leaderboard-points">{{ entry.total_points }} pts</div>
-                </div>
-                {% endfor %}
+        {% if rankings %}
+
+        <!-- Podium — Top 3 -->
+        {% if rankings | length >= 3 %}
+        <div class="podium">
+            <div class="podium-slot podium-2">
+                <div class="podium-medal">🥈</div>
+                <div class="podium-name">{{ rankings[1]._id }}</div>
+                <div class="podium-pts">{{ rankings[1].total_points }} pts</div>
             </div>
-            {% else %}
-            <div class="empty-state">
-                <p>No rankings yet. Be the first to cook and earn points!</p>
+            <div class="podium-slot podium-1">
+                <div class="podium-medal">🥇</div>
+                <div class="podium-name">{{ rankings[0]._id }}</div>
+                <div class="podium-pts">{{ rankings[0].total_points }} pts</div>
             </div>
-            {% endif %}
+            <div class="podium-slot podium-3">
+                <div class="podium-medal">🥉</div>
+                <div class="podium-name">{{ rankings[2]._id }}</div>
+                <div class="podium-pts">{{ rankings[2].total_points }} pts</div>
+            </div>
         </div>
+
+        <div class="leaderboard-divider">
+            <span>Full Rankings</span>
+        </div>
+        {% endif %}
+
+        <!-- Full Leaderboard List -->
+        <div class="leaderboard-list">
+            {% for entry in rankings %}
+            <div class="leaderboard-row {% if entry._id == current_username %}leaderboard-you{% endif %}">
+                <div class="leaderboard-rank">
+                    {% if loop.index == 1 %}🥇
+                    {% elif loop.index == 2 %}🥈
+                    {% elif loop.index == 3 %}🥉
+                    {% else %}#{{ loop.index }}{% endif %}
+                </div>
+                <div class="leaderboard-name">
+                    {{ entry._id }}
+                    {% if entry._id == current_username %}<span class="you-tag">You</span>{% endif %}
+                </div>
+                <div class="leaderboard-points">{{ entry.total_points }} pts</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+            <span class="empty-icon">🍳</span>
+            <p>No rankings yet. Be the first to cook and earn points!</p>
+        </div>
+        {% endif %}
     </div>
 
 </body>

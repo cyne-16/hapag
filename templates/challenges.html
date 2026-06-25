@@ -2,74 +2,560 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Weekly cooking challenges — complete tasks, earn XP, and level up your kitchen skills on Hapag.">
     <title>Weekly Challenges - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.5rem; color: var(--gold);
+            text-shadow: 0 0 18px rgba(245,166,35,.5);
+            display: flex; align-items: center; gap: .4rem;
+        }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .78rem; font-weight: 700;
+            padding: .35rem .75rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+
+        .nav-links a:hover  { color: var(--cream); background: var(--panel); }
+        .nav-links a.active { color: var(--jade); }
+        .nav-links a:last-child { color: var(--orange); border: 1px solid rgba(255,107,53,.3); }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+        /* ── PAGE HEADER ── */
+        .page-header { margin-bottom: 1.8rem; }
+
+        .page-header h2 {
+            font-family: var(--font-display);
+            font-size: 2rem; color: var(--cream); line-height: 1.1; margin-bottom: .3rem;
+        }
+
+        .page-header .subtitle { font-size: .9rem; color: var(--muted); font-weight: 600; margin-top: .4rem; }
+
+        /* ── WEEKLY BANNER / TIMER ── */
+        .weekly-banner {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1.1rem 1.4rem;
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 1.8rem;
+            flex-wrap: wrap; gap: 1rem;
+            position: relative; overflow: hidden;
+        }
+
+        .weekly-banner::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--orange), var(--gold), var(--purple));
+            border-radius: 16px 16px 0 0;
+        }
+
+        .weekly-banner .banner-left { display: flex; align-items: center; gap: .8rem; }
+
+        .weekly-banner .banner-icon {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--orange), var(--gold));
+            font-size: 1.3rem;
+            box-shadow: 0 4px 16px rgba(255,107,53,.3);
+        }
+
+        .weekly-banner .banner-title {
+            font-family: var(--font-display);
+            font-size: 1rem; color: var(--cream);
+        }
+
+        .weekly-banner .banner-sub { font-size: .78rem; color: var(--muted); font-weight: 600; margin-top: .15rem; }
+
+        .weekly-banner .timer { display: flex; gap: .6rem; }
+
+        .timer-block {
+            text-align: center;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .5rem .75rem;
+            min-width: 52px;
+        }
+
+        .timer-block .timer-num {
+            font-family: var(--font-display);
+            font-size: 1.2rem; color: var(--gold);
+        }
+
+        .timer-block .timer-label {
+            font-size: .6rem; color: var(--muted); font-weight: 700;
+            text-transform: uppercase; letter-spacing: .08em; margin-top: .15rem;
+        }
+
+        /* ── STATS ROW ── */
+        .stats-row { display: flex; gap: 1rem; margin-bottom: 1.6rem; flex-wrap: wrap; }
+
+        .stat-card {
+            flex: 1; min-width: 160px;
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.1rem 1.3rem;
+            position: relative; overflow: hidden;
+            transition: border-color .2s;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--sc-accent, var(--gold));
+            border-radius: 14px 14px 0 0;
+        }
+
+        .stat-card:nth-child(1) { --sc-accent: var(--orange); }
+        .stat-card:nth-child(2) { --sc-accent: var(--jade); }
+        .stat-card:nth-child(3) { --sc-accent: var(--purple); }
+
+        .stat-card:hover { border-color: var(--sc-accent, var(--gold)); }
+
+        .stat-card .stat-label {
+            font-size: .7rem; font-weight: 800; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .1em; margin-bottom: .4rem;
+        }
+
+        .stat-card .stat-value {
+            font-family: var(--font-display);
+            font-size: 1.5rem; color: var(--sc-accent, var(--gold));
+        }
+
+        /* ── ALERTS ── */
+        .alert {
+            border-radius: 10px; padding: .7rem 1rem;
+            font-size: .82rem; font-weight: 700;
+            margin-bottom: 1.2rem; border: 1px solid transparent;
+        }
+        .alert.error,.alert.danger { background:rgba(255,107,53,.12); border-color:rgba(255,107,53,.35); color:var(--orange); }
+        .alert.success { background:rgba(46,204,113,.1); border-color:rgba(46,204,113,.3); color:var(--jade); }
+        .alert.warning { background:rgba(245,166,35,.1); border-color:rgba(245,166,35,.3); color:var(--gold); }
+        .alert.info    { background:rgba(56,189,248,.1); border-color:rgba(56,189,248,.3); color:var(--sky); }
+
+        /* ── CHALLENGES GRID ── */
+        .challenges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1.2rem;
+        }
+
+        /* ── CHALLENGE CARD ── */
+        .challenge-card {
+            position: relative;
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.4rem 1.3rem 1.3rem;
+            transition: transform .22s ease, border-color .22s, box-shadow .22s;
+            overflow: hidden;
+        }
+
+        .challenge-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--orange), var(--gold), var(--purple));
+            border-radius: 16px 16px 0 0;
+        }
+
+        .challenge-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(245,166,35,.35);
+            box-shadow: 0 8px 32px rgba(0,0,0,.35);
+        }
+
+        /* Completed state */
+        .challenge-card.challenge-complete { border-color: rgba(46,204,113,.3); }
+        .challenge-card.challenge-complete::before { background: linear-gradient(90deg, var(--jade), #00ff9d); }
+        .challenge-card.challenge-complete:hover { border-color: rgba(46,204,113,.5); }
+
+        /* ── RARITY BADGES ── */
+        .rarity-badge {
+            display: inline-flex; align-items: center; gap: .25rem;
+            font-family: var(--font-body);
+            font-size: .65rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: .08em;
+            padding: .25rem .6rem;
+            border-radius: 99px;
+            margin-bottom: .6rem;
+        }
+
+        .rarity-common {
+            color: var(--muted);
+            background: var(--panel);
+            border: 1px solid var(--border);
+        }
+
+        .rarity-rare {
+            color: var(--purple);
+            background: rgba(168,85,247,.1);
+            border: 1px solid rgba(168,85,247,.25);
+        }
+
+        .rarity-epic {
+            color: var(--gold);
+            background: rgba(245,166,35,.1);
+            border: 1px solid rgba(245,166,35,.25);
+        }
+
+        .rarity-legendary {
+            color: var(--orange);
+            background: rgba(255,107,53,.1);
+            border: 1px solid rgba(255,107,53,.3);
+        }
+
+        /* ── CARD HEADER ── */
+        .challenge-header {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            gap: .7rem; margin-bottom: .7rem;
+        }
+
+        .challenge-header h3 {
+            font-family: var(--font-display);
+            font-size: 1.05rem; color: var(--cream); line-height: 1.3;
+        }
+
+        .challenge-points {
+            display: inline-flex; align-items: center; gap: .25rem;
+            font-family: var(--font-display);
+            font-size: .8rem; color: var(--night);
+            background: linear-gradient(135deg, var(--gold), #FFD66B);
+            padding: .3rem .7rem;
+            border-radius: 99px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .challenge-desc {
+            font-size: .85rem; color: var(--muted); font-weight: 600;
+            line-height: 1.5; margin-bottom: 1.1rem;
+        }
+
+        /* ── PROGRESS BAR ── */
+        .challenge-progress-bar {
+            width: 100%; height: 10px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .challenge-progress-fill {
+            height: 100%; border-radius: 99px;
+            background: linear-gradient(90deg, var(--orange), var(--gold));
+            transition: width .8s cubic-bezier(0.22, 1, 0.36, 1);
+            min-width: 0;
+        }
+
+        .challenge-complete .challenge-progress-fill {
+            background: linear-gradient(90deg, var(--jade), #00ff9d);
+        }
+
+        .challenge-progress-text {
+            font-family: var(--font-body);
+            font-size: .76rem; font-weight: 700; color: var(--muted);
+            margin-top: .5rem; margin-bottom: 1rem;
+        }
+
+        /* ── BUTTONS ── */
+        .btn-cooked,
+        .btn-primary {
+            display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+            width: 100%; padding: .75rem 1.1rem;
+            font-family: var(--font-display);
+            font-size: .88rem; color: var(--night);
+            background: linear-gradient(135deg, var(--jade), #00d084);
+            border: none; border-radius: 10px;
+            cursor: pointer;
+            transition: transform .18s, filter .18s;
+            box-shadow: 0 3px 12px rgba(46,204,113,.25);
+        }
+
+        .btn-cooked:hover,
+        .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+        .btn-secondary {
+            display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+            width: 100%; padding: .75rem 1.1rem;
+            font-family: var(--font-body);
+            font-weight: 800;
+            font-size: .85rem; color: var(--muted);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary:disabled { opacity: .8; }
+
+        .btn-claimed {
+            display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+            width: 100%; padding: .75rem 1.1rem;
+            font-family: var(--font-body);
+            font-weight: 800;
+            font-size: .85rem; color: var(--jade);
+            background: rgba(46,204,113,.1);
+            border: 1px solid rgba(46,204,113,.3);
+            border-radius: 10px;
+            cursor: not-allowed;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 2rem 1.2rem;
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-top: 1.4rem;
+        }
+
+        .empty-state p { color: var(--muted); font-size: .85rem; font-weight: 600; }
+
+        .empty-state .reset-icon { font-size: 1.6rem; display: block; margin-bottom: .5rem; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .main-container { padding: 1.5rem 1rem 3rem; }
+            .challenges-grid { grid-template-columns: 1fr; }
+            .weekly-banner { flex-direction: column; text-align: center; }
+            .weekly-banner .banner-left { flex-direction: column; }
+            .stats-row { flex-direction: column; }
+        }
+    </style>
 </head>
 <body>
 
+    <!-- ===== NAVBAR ===== -->
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-brand">
+    <img src="{{ url_for('static', filename='images/icon.png') }}"
+         alt="Hapag"
+         style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;">
+    Hapag
+</div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard') }}">Home</a>
-            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('recommend') }}">Recipes</a>
             <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('community') }}">Community</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
             <a href="{{ url_for('profile') }}">Profile</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
         </div>
     </nav>
 
+    <!-- ===== MAIN CONTENT ===== -->
     <div class="main-container">
-        <h2>🎯 Weekly Challenges</h2>
-        <p style="color:#888; margin-top:6px;">
-            New challenges every week! Complete them to earn bonus points.
-        </p>
 
+        <!-- Page Header -->
+        <div class="page-header">
+            <h2>🎯 Weekly Challenges</h2>
+            <p class="subtitle">New challenges every week! Complete them to earn bonus points and climb the leaderboard.</p>
+        </div>
+
+        <!-- Weekly Banner with Countdown -->
+        <div class="weekly-banner">
+            <div class="banner-left">
+                <div class="banner-icon">⚔️</div>
+                <div>
+                    <div class="banner-title">Season Challenge Active</div>
+                    <div class="banner-sub">Challenges reset every Monday at midnight</div>
+                </div>
+            </div>
+            <div class="timer" id="countdown-timer">
+                <div class="timer-block">
+                    <div class="timer-num" id="timer-days">--</div>
+                    <div class="timer-label">Days</div>
+                </div>
+                <div class="timer-block">
+                    <div class="timer-num" id="timer-hours">--</div>
+                    <div class="timer-label">Hrs</div>
+                </div>
+                <div class="timer-block">
+                    <div class="timer-num" id="timer-mins">--</div>
+                    <div class="timer-label">Min</div>
+                </div>
+                <div class="timer-block">
+                    <div class="timer-num" id="timer-secs">--</div>
+                    <div class="timer-label">Sec</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-label">Total Challenges</div>
+                <div class="stat-value">{{ challenges | length }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Completed</div>
+                <div class="stat-value">{{ challenges | selectattr('completed') | list | length }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Points Available</div>
+                <div class="stat-value">{{ challenges | sum(attribute='points') }}</div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category, message in messages %}
                 <div class="alert {{ category }}">{{ message }}</div>
             {% endfor %}
         {% endwith %}
 
-        <div class="challenges-grid" style="margin-top:24px;">
+        <!-- Challenges Grid -->
+        <div class="challenges-grid">
             {% for challenge in challenges %}
             <div class="challenge-card {% if challenge.completed %}challenge-complete{% endif %}">
+
+                <!-- Rarity badge based on point value -->
+                {% if challenge.points >= 100 %}
+                    <span class="rarity-badge rarity-legendary">Legendary</span>
+                {% elif challenge.points >= 50 %}
+                    <span class="rarity-badge rarity-epic">Epic</span>
+                {% elif challenge.points >= 25 %}
+                    <span class="rarity-badge rarity-rare">Rare</span>
+                {% else %}
+                    <span class="rarity-badge rarity-common">Common</span>
+                {% endif %}
+
                 <div class="challenge-header">
                     <h3>{{ challenge.title }}</h3>
                     <span class="challenge-points">+{{ challenge.points }} pts</span>
                 </div>
+
                 <p class="challenge-desc">{{ challenge.description }}</p>
 
                 <div class="challenge-progress-bar">
                     <div class="challenge-progress-fill"
-                         style="width: {{ (challenge.progress / challenge.target * 100) | int }}%"></div>
+                         style="width: {{ (challenge.progress / challenge.target * 100) | int }}%">
+                    </div>
                 </div>
                 <p class="challenge-progress-text">
                     {{ challenge.progress }} / {{ challenge.target }}
                 </p>
 
                 {% if challenge.claimed %}
-                    <button class="btn-secondary" disabled style="width:100%; cursor:not-allowed;">
+                    <button class="btn-claimed" disabled>
                         ✅ Claimed
                     </button>
                 {% elif challenge.completed %}
                     <form method="POST" action="{{ url_for('claim_challenge', claim_key=challenge.claim_key) }}">
-                        <button type="submit" class="btn-cooked" style="width:100%;">
-                            🎁 Claim Reward
+                        <button type="submit" class="btn-cooked">
+                            Claim Reward
                         </button>
                     </form>
                 {% else %}
-                    <button class="btn-secondary" disabled style="width:100%; cursor:not-allowed;">
-                        🔒 In Progress
+                    <button class="btn-secondary" disabled>
+                        In Progress
                     </button>
                 {% endif %}
             </div>
             {% endfor %}
         </div>
 
-        <div class="empty-state" style="margin-top:20px;">
-            <p style="font-size:0.85rem;">🔄 Challenges reset every Monday. Check back for new ones!</p>
+        <!-- Empty State -->
+        <div class="empty-state">
+            <span class="reset-icon"></span>
+            <p>Challenges reset every Monday. Check back for new quests!</p>
         </div>
+
     </div>
+
+    <!-- ===== COUNTDOWN TIMER SCRIPT ===== -->
+    <script>
+        function getNextMonday() {
+            const now = new Date();
+            const day = now.getDay();
+            const daysUntilMonday = (8 - day) % 7 || 7;
+            const nextMonday = new Date(now);
+            nextMonday.setDate(now.getDate() + daysUntilMonday);
+            nextMonday.setHours(0, 0, 0, 0);
+            return nextMonday;
+        }
+
+        function updateCountdown() {
+            const target = getNextMonday();
+            const now = new Date();
+            let diff = target - now;
+
+            if (diff <= 0) {
+                diff = 0;
+            }
+
+            const days  = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins  = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const secs  = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById('timer-days').textContent  = String(days).padStart(2, '0');
+            document.getElementById('timer-hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('timer-mins').textContent  = String(mins).padStart(2, '0');
+            document.getElementById('timer-secs').textContent  = String(secs).padStart(2, '0');
+        }
+
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    </script>
 
 </body>
 </html>

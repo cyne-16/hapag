@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Households - Hapag</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.5rem; color: var(--gold);
+            text-shadow: 0 0 18px rgba(245,166,35,.5);
+            display: flex; align-items: center; gap: .4rem;
+        }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .78rem; font-weight: 700;
+            padding: .35rem .75rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+
+        .nav-links a:hover  { color: var(--cream); background: var(--panel); }
+        .nav-links a.active { color: var(--jade); }
+        .nav-links a:last-child { color: var(--orange); border: 1px solid rgba(255,107,53,.3); }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+        /* ── PAGE HEADER ── */
+        .page-header { margin-bottom: 1.8rem; }
+
+        .page-header h2 {
+            font-family: var(--font-display);
+            font-size: 2rem; color: var(--cream); line-height: 1.1; margin-bottom: .3rem;
+        }
+
+        .page-header h2 span { color: var(--gold); text-shadow: 0 0 20px rgba(245,166,35,.45); }
+        .page-header p { font-size: .9rem; color: var(--muted); font-weight: 600; }
+
+        /* ── NOTICE (not in a household) ── */
+        .ai-notice {
+            background: rgba(245,166,35,.07);
+            border: 1px solid rgba(245,166,35,.2);
+            border-radius: 12px; padding: .85rem 1.1rem;
+            font-size: .85rem; font-weight: 700;
+            color: var(--muted);
+        }
+
+        .ai-notice a { color: var(--gold); text-decoration: none; font-weight: 800; }
+        .ai-notice a:hover { color: var(--orange); }
+
+        /* ── HOUSEHOLD GRID ── */
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+
+        /* ── HOUSEHOLD CARD ── */
+        .recipe-card {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.4rem 1.3rem 1.3rem;
+            position: relative; overflow: hidden;
+            transition: transform .22s ease, border-color .22s, box-shadow .22s;
+        }
+
+        .recipe-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            border-radius: 16px 16px 0 0;
+            background: var(--rc-accent, var(--sky));
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--rc-accent, var(--sky));
+            box-shadow: 0 8px 32px rgba(0,0,0,.35);
+        }
+
+        .recipe-card:nth-child(4n+1) { --rc-accent: #38BDF8; }
+        .recipe-card:nth-child(4n+2) { --rc-accent: #F5A623; }
+        .recipe-card:nth-child(4n+3) { --rc-accent: #2ECC71; }
+        .recipe-card:nth-child(4n+4) { --rc-accent: #FF6B35; }
+
+        .recipe-icon {
+            font-size: 2rem;
+            margin-bottom: .6rem;
+            display: block;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,.4));
+        }
+
+        .recipe-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.05rem; color: var(--cream);
+            line-height: 1.2; margin-bottom: .4rem;
+        }
+
+        .recipe-meta {
+            display: flex; gap: .8rem; flex-wrap: wrap;
+            font-size: .78rem; color: var(--muted); font-weight: 700;
+        }
+
+        .recipe-card p { font-size: .8rem; color: var(--muted); font-weight: 600; }
+        .recipe-card p strong { color: var(--cream); }
+
+        /* ── BUTTON ── */
+        .btn {
+            background: linear-gradient(135deg, var(--jade), #00d084);
+            color: var(--night); border: none; border-radius: 8px;
+            padding: .65rem 1.2rem;
+            font-family: var(--font-display);
+            font-size: .9rem; letter-spacing: .03em;
+            cursor: pointer; white-space: nowrap;
+            text-decoration: none;
+            transition: transform .18s, filter .18s;
+            box-shadow: 0 3px 12px rgba(46,204,113,.25);
+        }
+
+        .btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .empty-state p { font-size: .9rem; color: var(--muted); font-weight: 600; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 720px) {
+            .main-container { padding: 1.5rem 1rem 3rem; }
+            .recipe-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+       <div class="nav-brand">
+    <img src="{{ url_for('static', filename='images/icon.png') }}"
+         alt="Hapag"
+         style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;">
+    Hapag
+</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Home</a>
+            <a href="{{ url_for('recommend') }}">Recipes</a>
+            <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('community') }}">Community</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="page-header">
+            <h2>🏠 <span>Filipino</span> Households</h2>
+            <p>Browse all households using Hapag and see what they're cooking!</p>
+        </div>
+
+        {% if not user_household_id %}
+        <div class="ai-notice" style="margin:16px 0;">
+            You're not in a household yet.
+            <a href="{{ url_for('household') }}">
+                Create or join one here!
+            </a>
+        </div>
+        {% endif %}
+
+        {% if households %}
+        <div class="recipe-grid" style="margin-top:24px;">
+            {% for hh in households %}
+            <div class="recipe-card">
+                <div class="recipe-icon">🏠</div>
+                <h3>{{ hh.name }}</h3>
+
+                <div class="recipe-meta" style="margin:10px 0;">
+                    <span>👥 {{ hh.member_count }} members</span>
+                    <span>📤 {{ hh.post_count }} posts</span>
+                </div>
+
+                {% if hh.top_member %}
+                <p>
+                    🏆 Top cook: <strong>{{ hh.top_member }}</strong>
+                    ({{ hh.top_points }} pts)
+                </p>
+                {% endif %}
+
+                <p style="font-size:0.75rem; margin-top:4px;">
+                    Since {{ hh.created_at }}
+                </p>
+
+                <a href="{{ url_for('view_household', household_id=hh.id) }}"
+                   class="btn" style="display:block; text-align:center; margin-top:14px;">
+                    View Household
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="margin-top:40px;">
+            <p>No households yet. Create the first one!</p>
+            <a href="{{ url_for('household') }}" class="btn" style="margin-top:16px; display:inline-block;">
+                Create a Household
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>

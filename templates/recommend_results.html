@@ -2,24 +2,417 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recipe Recommendations - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky !important;
+            top: 0 !important;
+            left: 0 !important; right: 0 !important;
+            bottom: unset !important;
+            width: 100% !important;
+            z-index: 100 !important;
+            background: rgba(13,27,42,.95) !important;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border) !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 0 2rem !important;
+            height: 60px !important;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--gold);
+            letter-spacing: .03em;
+            text-shadow: 0 0 18px rgba(245,166,35,.5);
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .nav-brand img { width: 32px; height: 32px; object-fit: contain; }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .78rem;
+            font-weight: 700;
+            padding: .35rem .75rem;
+            border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+        }
+
+        .nav-links a:hover  { color: var(--cream); background: var(--panel); }
+        .nav-links a.active { color: var(--gold); }
+
+        .nav-links a:last-child { color: var(--orange); border: 1px solid rgba(255,107,53,.3); }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem 4rem;
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header { margin-bottom: 1.5rem; }
+
+        .page-header h2 {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: var(--cream);
+            line-height: 1.1;
+            margin-bottom: .3rem;
+        }
+
+        .page-header h2 span { color: var(--gold); }
+
+        /* ── SECTION LABEL ── */
+        .section-label {
+            font-size: .7rem;
+            font-weight: 800;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+        }
+
+        .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        /* ── SEARCH SUMMARY BAR ── */
+        .search-summary {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: .9rem 1.2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: .6rem 1.4rem;
+            margin-bottom: 1.8rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .search-summary::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--sky), var(--jade));
+            border-radius: 14px 14px 0 0;
+        }
+
+        .search-summary span {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .search-summary span strong {
+            color: var(--cream);
+            font-weight: 800;
+        }
+
+        /* ── FLASH ── */
+        .alert {
+            border-radius: 10px;
+            padding: .7rem 1rem;
+            font-size: .82rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            border: 1px solid transparent;
+        }
+
+        .alert.error, .alert.danger { background: rgba(255,107,53,.12); border-color: rgba(255,107,53,.35); color: var(--orange); }
+        .alert.success              { background: rgba(46,204,113,.1);  border-color: rgba(46,204,113,.3);  color: var(--jade); }
+        .alert.info                 { background: rgba(56,189,248,.1);  border-color: rgba(56,189,248,.3);  color: var(--sky); }
+
+        /* ── RECIPE GRID ── */
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* ── RECIPE CARD ── */
+        .recipe-card {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.4rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: .7rem;
+            transition: transform .22s, border-color .22s, box-shadow .22s;
+        }
+
+        .recipe-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+            background: var(--card-accent, var(--gold));
+        }
+
+        /* shimmer on hover */
+        .recipe-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.03) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform .4s ease;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--card-accent, var(--gold));
+            box-shadow: 0 8px 32px rgba(0,0,0,.35), 0 0 0 1px var(--card-accent, var(--gold));
+        }
+
+        .recipe-card:hover::after { transform: translateX(100%); }
+
+        /* alternate accent colors */
+        .recipe-card:nth-child(3n+1) { --card-accent: var(--gold); }
+        .recipe-card:nth-child(3n+2) { --card-accent: var(--sky); }
+        .recipe-card:nth-child(3n+3) { --card-accent: var(--jade); }
+
+        /* ── CARD TOP ROW ── */
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: .5rem;
+        }
+
+        .recipe-icon {
+            font-size: 2.2rem;
+            line-height: 1;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,.4));
+        }
+
+        /* source badge */
+        .source-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            border-radius: 6px;
+            padding: .2rem .6rem;
+            font-size: .68rem;
+            font-weight: 800;
+            letter-spacing: .04em;
+            flex-shrink: 0;
+        }
+
+        .source-badge.db {
+            background: rgba(46,204,113,.12);
+            border: 1px solid rgba(46,204,113,.3);
+            color: var(--jade);
+        }
+
+        .source-badge.ai {
+            background: rgba(56,189,248,.12);
+            border: 1px solid rgba(56,189,248,.3);
+            color: var(--sky);
+        }
+
+        /* ── CARD BODY ── */
+        .recipe-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            color: var(--cream);
+            line-height: 1.2;
+        }
+
+        .recipe-desc {
+            font-size: .8rem;
+            color: var(--muted);
+            font-weight: 600;
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        /* ── META PILLS ── */
+        .recipe-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .4rem;
+        }
+
+        .meta-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: .2rem .55rem;
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        .meta-pill.budget-ok  { background: rgba(46,204,113,.1);  border-color: rgba(46,204,113,.3);  color: var(--jade); }
+        .meta-pill.budget-over{ background: rgba(255,107,53,.1);  border-color: rgba(255,107,53,.3);  color: var(--orange); }
+        .meta-pill.category   { background: rgba(168,85,247,.1);  border-color: rgba(168,85,247,.3);  color: var(--purple); }
+
+        /* ── VIEW BUTTON ── */
+        .btn-view {
+            display: block;
+            text-align: center;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--cream);
+            text-decoration: none;
+            font-family: var(--font-body);
+            font-size: .84rem;
+            font-weight: 800;
+            padding: .65rem;
+            border-radius: 10px;
+            transition: border-color .2s, background .2s, transform .18s;
+            margin-top: auto;
+        }
+
+        .btn-view:hover {
+            border-color: var(--card-accent, var(--gold));
+            background: rgba(245,166,35,.08);
+            transform: translateY(-1px);
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state .empty-icon { font-size: 3rem; display: block; margin-bottom: 1rem; }
+
+        .empty-state p {
+            font-size: .95rem;
+            color: var(--muted);
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+        }
+
+        /* ── BOTTOM ACTIONS ── */
+        .bottom-actions { display: flex; gap: .8rem; flex-wrap: wrap; }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--cream);
+            text-decoration: none;
+            font-family: var(--font-body);
+            font-size: .84rem;
+            font-weight: 800;
+            padding: .65rem 1.3rem;
+            border-radius: 10px;
+            transition: border-color .2s, background .2s;
+        }
+
+        .btn-secondary:hover { border-color: var(--gold); background: rgba(245,166,35,.07); }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            color: var(--night);
+            text-decoration: none;
+            font-family: var(--font-display);
+            font-size: .9rem;
+            padding: .65rem 1.3rem;
+            border-radius: 10px;
+            transition: filter .2s, transform .18s;
+            box-shadow: 0 4px 16px rgba(245,166,35,.25);
+        }
+
+        .btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 640px) {
+            .main-container { padding: 1.5rem 1rem 3rem; }
+            .recipe-grid { grid-template-columns: 1fr; }
+            .search-summary { flex-direction: column; gap: .4rem; }
+        }
+    </style>
 </head>
 <body>
 
+    <!-- NAVBAR -->
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-brand">
+            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
+            Hapag
+        </div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard') }}">Home</a>
-            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('recommend') }}">Recipes</a>
             <a href="{{ url_for('challenges') }}">Challenges</a>
+            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('community') }}">Community</a>
+            <a href="{{ url_for('cookbook') }}">Cookbook</a>
             <a href="{{ url_for('profile') }}">Profile</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
         </div>
     </nav>
 
     <div class="main-container">
-        <h2>🍽️ Recommended Recipes</h2>
+
+        <!-- PAGE HEADER -->
+        <div class="page-header">
+            <h2>🍽️ <span>Recommended</span> Recipes</h2>
+        </div>
 
         <!-- SEARCH SUMMARY -->
         <div class="search-summary">
@@ -36,79 +429,65 @@
         {% endwith %}
 
         {% if recipes %}
+
+            <div class="section-label">{{ recipes | length }} recipe{{ 's' if recipes | length != 1 }} found</div>
+
             <div class="recipe-grid">
                 {% for recipe in recipes %}
-               <div class="recipe-card">
-    <div class="recipe-icon">🍲</div>
+                <div class="recipe-card">
 
-    {% if recipe.source == "database" %}
-        <span style="
-            background:#e8f5e9;
-            color:#2e7d32;
-            padding:4px 8px;
-            border-radius:6px;
-            font-size:12px;
-            font-weight:bold;
-            display:inline-block;
-            margin-bottom:8px;">
-            📚 Database Recipe
-        </span>
-    {% else %}
-        <span style="
-            background:#e3f2fd;
-            color:#1565c0;
-            padding:4px 8px;
-            border-radius:6px;
-            font-size:12px;
-            font-weight:bold;
-            display:inline-block;
-            margin-bottom:8px;">
-            🤖 AI Recommendation
-        </span>
-    {% endif %}
+                    <div class="card-top">
+                        <span class="recipe-icon">🍲</span>
+                        {% if recipe.source == "database" %}
+                            <span class="source-badge db">📚 Database</span>
+                        {% else %}
+                            <span class="source-badge ai">🤖 AI Pick</span>
+                        {% endif %}
+                    </div>
 
-    <h3>{{ recipe.name }}</h3>
-    <p class="recipe-desc">{{ recipe.description }}</p>
+                    <h3>{{ recipe.name }}</h3>
+                    <p class="recipe-desc">{{ recipe.description }}</p>
 
-                   <div class="recipe-meta">
-    {% if recipe.source == "database" %}
-        <span style="background:#e3f2fd; color:#1565c0;">📚 Saved Recipe</span>
-    {% else %}
-        <span style="background:#fff8e1; color:#7a6000;">🤖 AI Generated</span>
-    {% endif %}
-    {% set cost_num = recipe.estimated_cost | replace('₱', '') | replace(',', '') | int %}
-    {% set budget_num = budget | int %}
-    {% if cost_num <= budget_num %}
-        <span style="background:#e8f5e9; color:#2e7d32;">✅ Within Budget</span>
-    {% else %}
-        <span style="background:#ffebee; color:#c62828;">⚠️ Over Budget</span>
-    {% endif %}
-     {% if recipe.category %}
-        <span style="background:#f3e5f5; color:#6a1b9a;">🏷️ {{ recipe.category }}</span>
-    {% endif %}
-    <span>💰 {{ recipe.estimated_cost }}</span>
-    <span>⏱ Prep: {{ recipe.prep_time }}</span>
-    <span>🔥 Cook: {{ recipe.cook_time }}</span>
-    <span>👥 Serves: {{ recipe.servings }}</span>
-</div>
+                    <div class="recipe-meta">
+                        {% set cost_num = recipe.estimated_cost | replace('₱', '') | replace(',', '') | int %}
+                        {% set budget_num = budget | int %}
+                        {% if cost_num <= budget_num %}
+                            <span class="meta-pill budget-ok">✅ Within Budget</span>
+                        {% else %}
+                            <span class="meta-pill budget-over">⚠️ Over Budget</span>
+                        {% endif %}
 
-                    <a href="{{ url_for('recipe_detail', recipe_name=recipe.name) }}" 
-                       class="btn" style="width:100%; text-align:center; display:block; margin-top:12px;">
-                        View Full Recipe
-                    </a>
+                        {% if recipe.category %}
+                            <span class="meta-pill category">🏷️ {{ recipe.category }}</span>
+                        {% endif %}
+
+                        <span class="meta-pill">💰 {{ recipe.estimated_cost }}</span>
+                        <span class="meta-pill">⏱ {{ recipe.prep_time }}</span>
+                        <span class="meta-pill">🔥 {{ recipe.cook_time }}</span>
+                        <span class="meta-pill">👥 {{ recipe.servings }}</span>
+                    </div>
+
+                    <a href="{{ url_for('recipe_detail', recipe_name=recipe.name) }}"
+                       class="btn-view">View Full Recipe →</a>
+
                 </div>
                 {% endfor %}
             </div>
+
         {% else %}
+
             <div class="empty-state">
-                <p>😕 No recipes found. Please try again.</p>
-                <a href="{{ url_for('recommend') }}" class="btn">Try Again</a>
+                <span class="empty-icon">😕</span>
+                <p>No recipes found for your search. Try a different budget or preference.</p>
+                <a href="{{ url_for('recommend') }}" class="btn-primary">🔄 Try Again</a>
             </div>
+
         {% endif %}
 
-        <div style="margin-top: 24px;">
+        <div class="bottom-actions">
             <a href="{{ url_for('recommend') }}" class="btn-secondary">🔄 Search Again</a>
         </div>
+
     </div>
 
 </body>

@@ -48,6 +48,80 @@ def log_activity(action_type, username, details=""):
     except Exception as e:
         print(f"Activity log error: {e}")
 
+def get_recipe_tier(estimated_cost_str):
+    """Automatically determines recipe tier based on estimated cost."""
+    digits = "".join(c for c in str(estimated_cost_str) if c.isdigit())
+    cost = int(digits) if digits else 0
+
+    if cost <= 150:
+        return {
+            "name": "Common",
+            "emoji": "🟢",
+            "color": "#43a047",
+            "unlock_cost": 0,
+            "bg_color": "#e8f5e9"
+        }
+    elif cost <= 300:
+        return {
+            "name": "Uncommon",
+            "emoji": "🔵",
+            "color": "#1976d2",
+            "unlock_cost": 100,
+            "bg_color": "#e3f2fd"
+        }
+    elif cost <= 500:
+        return {
+            "name": "Rare",
+            "emoji": "🟣",
+            "color": "#7b1fa2",
+            "unlock_cost": 300,
+            "bg_color": "#f3e5f5"
+        }
+    else:
+        return {
+            "name": "Legendary",
+            "emoji": "🟡",
+            "color": "#f57f17",
+            "unlock_cost": 600,
+            "bg_color": "#fff8e1"
+        }
+LEVEL_ORDER = {
+    "Beginner Cook": 0,
+    "Home Cook": 1,
+    "Skilled Cook": 2,
+    "Master Chef": 3
+}
+
+LEVEL_META = {
+    "Beginner Cook": {
+        "emoji": "🟢",
+        "color": "#43a047",
+        "bg_color": "#e8f5e9",
+        "min_points": 0
+    },
+    "Home Cook": {
+        "emoji": "🔵",
+        "color": "#1976d2",
+        "bg_color": "#e3f2fd",
+        "min_points": 100
+    },
+    "Skilled Cook": {
+        "emoji": "🟣",
+        "color": "#7b1fa2",
+        "bg_color": "#f3e5f5",
+        "min_points": 300
+    },
+    "Master Chef": {
+        "emoji": "🟡",
+        "color": "#f57f17",
+        "bg_color": "#fff8e1",
+        "min_points": 600
+    }
+}
+
+def user_meets_level(user_level, required_level):
+    """Returns True if user's level is >= required level."""
+    return LEVEL_ORDER.get(user_level, 0) >= LEVEL_ORDER.get(required_level, 0)
 # ─────────────────────────────────────────────
 # CHALLENGE TEMPLATES (the pool to pick from)
 # ─────────────────────────────────────────────
@@ -261,11 +335,73 @@ def logout():
 # DASHBOARD
 # ─────────────────────────────────────────────
 
+from datetime import datetime, timedelta
+from bson import ObjectId
+
+from datetime import datetime, timedelta
+from bson import ObjectId
+
 @app.route("/dashboard")
 @login_required
-def dashboard(): 
+def dashboard():
     user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
-    return render_template("dashboard.html", user=user_data)
+    
+    # ── Calculate Streak ──
+    streak = 0
+    if user_data:
+        today = datetime.now().date()
+        last_activity = user_data.get('last_activity')
+        current_streak = user_data.get('streak', 0)
+        
+        if last_activity:
+            # Convert to date if it's a datetime object
+            if isinstance(last_activity, datetime):
+                last_date = last_activity.date()
+            else:
+                # If stored as string, convert it
+                last_date = datetime.fromisoformat(last_activity).date()
+            
+            # Check if user already logged in today
+            if last_date == today:
+                # Already logged in today, keep existing streak
+                streak = current_streak
+                # Update last_activity to now (but keep streak)
+                db.users.update_one(
+                    {"_id": ObjectId(current_user.id)},
+                    {"$set": {"last_activity": datetime.now()}}
+                )
+            elif last_date == today - timedelta(days=1):
+                # Logged in yesterday - increment streak!
+                streak = current_streak + 1
+                db.users.update_one(
+                    {"_id": ObjectId(current_user.id)},
+                    {"$set": {
+                        "streak": streak,
+                        "last_activity": datetime.now()
+                    }}
+                )
+            else:
+                # Streak broken (more than 1 day gap) - reset to 1
+                streak = 1
+                db.users.update_one(
+                    {"_id": ObjectId(current_user.id)},
+                    {"$set": {
+                        "streak": 1,
+                        "last_activity": datetime.now()
+                    }}
+                )
+        else:
+            # First login ever
+            streak = 1
+            db.users.update_one(
+                {"_id": ObjectId(current_user.id)},
+                {"$set": {
+                    "streak": 1,
+                    "last_activity": datetime.now()
+                }}
+            )
+    
+    return render_template("dashboard.html", user=user_data, streak=streak)
 
 # ─────────────────────────────────────────────
 # PROFILE
@@ -284,36 +420,68 @@ def profile():
 @login_required
 def edit_profile():
     if request.method == "POST":
-        username = request.form.get("username")
-        update_data = {"username": username}
+        action = request.form.get("action")
 
-        # Handle profile picture upload
-        if "profile_picture" in request.files:
-            file = request.files["profile_picture"]
-            if file and file.filename != "":
-                # Limit file size to 2MB
-                file.seek(0, 2)
-                file_size = file.tell()
-                file.seek(0)
+        if action == "update_profile":
+            username = request.form.get("username")
+            update_data = {"username": username}
 
-                if file_size > 2 * 1024 * 1024:
-                    flash("Image too large. Please choose an image under 2MB.", "danger")
-                    return redirect(url_for("edit_profile"))
+            # Handle profile picture upload
+            if "profile_picture" in request.files:
+                file = request.files["profile_picture"]
+                if file and file.filename != "":
+                    file.seek(0, 2)
+                    file_size = file.tell()
+                    file.seek(0)
 
-                # Convert image to base64
-                image_data = base64.b64encode(file.read()).decode("utf-8")
-                mime_type = file.content_type  # e.g. image/png, image/jpeg
-                update_data["profile_picture"] = f"data:{mime_type};base64,{image_data}"
+                    if file_size > 2 * 1024 * 1024:
+                        flash("Image too large. Please choose an image under 2MB.", "danger")
+                        return redirect(url_for("edit_profile"))
 
-        db.users.update_one(
-            {"_id": ObjectId(current_user.id)},
-            {"$set": update_data}
-        )
-        flash("Profile updated successfully!", "success")
-        return redirect(url_for("profile"))
+                    image_data = base64.b64encode(file.read()).decode("utf-8")
+                    mime_type = file.content_type
+                    update_data["profile_picture"] = f"data:{mime_type};base64,{image_data}"
+
+            db.users.update_one(
+                {"_id": ObjectId(current_user.id)},
+                {"$set": update_data}
+            )
+            flash("Profile updated successfully!", "success")
+            return redirect(url_for("profile"))
+
+        elif action == "change_password":
+            current_password = request.form.get("current_password")
+            new_password = request.form.get("new_password")
+            confirm_password = request.form.get("confirm_password")
+
+            # Verify current password
+            user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+            if not bcrypt.check_password_hash(user_data["password"], current_password):
+                flash("Current password is incorrect.", "danger")
+                return redirect(url_for("edit_profile") + "?tab=password")
+
+            # Check new passwords match
+            if new_password != confirm_password:
+                flash("New passwords do not match.", "danger")
+                return redirect(url_for("edit_profile") + "?tab=password")
+
+            # Check minimum length
+            if len(new_password) < 6:
+                flash("New password must be at least 6 characters.", "danger")
+                return redirect(url_for("edit_profile") + "?tab=password")
+
+            # Hash and save new password
+            hashed_pw = bcrypt.generate_password_hash(new_password).decode("utf-8")
+            db.users.update_one(
+                {"_id": ObjectId(current_user.id)},
+                {"$set": {"password": hashed_pw}}
+            )
+            flash("Password changed successfully!", "success")
+            return redirect(url_for("profile"))
 
     user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
-    return render_template("edit_profile.html", user=user_data)
+    active_tab = request.args.get("tab", "profile")
+    return render_template("edit_profile.html", user=user_data, active_tab=active_tab)
 
 from groq import Groq
 import os
@@ -676,12 +844,21 @@ Respond ONLY in this exact JSON format, no extra text:
     # Check if there's a mystery bonus to display, then clear it (one-time popup)
     mystery_bonus = session.pop("mystery_bonus", None)
 
+# Check if user has a pending evidence submission for this recipe
+    pending_submission = db.cooking_evidence.find_one({
+        "user_id": current_user.id,
+        "recipe_name": recipe_name,
+        "status": "pending"
+    })
+
     return render_template("recipe_detail.html",
                            recipe=recipe,
                            source=source,
                            recipe_name=recipe_name,
                            household_size=household_size,
-                           mystery_bonus=mystery_bonus)
+                           mystery_bonus=mystery_bonus,
+                           pending_submission=pending_submission,
+                           already_cooked_today=False)
 # ─────────────────────────────────────────────
 # MARK RECIPE AS COOKED
 # ─────────────────────────────────────────────
@@ -959,6 +1136,7 @@ def admin_add_recipe():
         category = request.form.get("category")
         tags_raw = request.form.get("tags", "")
         tags = [t.strip() for t in tags_raw.split(",") if t.strip()]
+        required_level = request.form.get("required_level", "Beginner Cook")
 
         # Process ingredients
         ingredient_names = request.form.getlist("ingredient_name")
@@ -989,7 +1167,8 @@ def admin_add_recipe():
             "instructions": instructions,
             "tips": tips,
             "category": category,
-            "tags": tags
+            "tags": tags,
+            "required_level": required_level
         })
 
         flash("Recipe added successfully!", "success")
@@ -1015,6 +1194,7 @@ def admin_edit_recipe(recipe_id):
         category = request.form.get("category")
         tags_raw = request.form.get("tags", "")
         tags = [t.strip() for t in tags_raw.split(",") if t.strip()]
+        required_level = request.form.get("required_level", "Beginner Cook")
 
         ingredient_names = request.form.getlist("ingredient_name")
         ingredient_quantities = request.form.getlist("ingredient_quantity")
@@ -1045,7 +1225,8 @@ def admin_edit_recipe(recipe_id):
                 "instructions": instructions,
                 "tips": tips,
                 "category": category,
-                "tags": tags
+                "tags": tags,
+                "required_level": required_level
             }}
         )
 
@@ -1323,7 +1504,8 @@ def admin_approve_ai_recipe(log_id):
         "instructions": log.get("instructions", []),
         "tips": log.get("tips", ""),
         "category": log.get("category", "Other"),
-        "tags": log.get("tags", [])
+        "tags": log.get("tags", []),
+        
     })
 
     db.ai_recipe_logs.update_one(
@@ -1521,87 +1703,120 @@ def leaderboard():
 def cookbook():
     user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
     cooking_history = user_data.get("cooking_history", [])
+    unlocked_recipes = user_data.get("unlocked_recipes", [])
+    user_points = user_data.get("points", 0)
 
-    # Get unique cooked recipe names (case-insensitive)
-    cooked_names_lower = set(entry["name"].lower() for entry in cooking_history)
-
-    # Build a lookup of cook count and first-cooked date per recipe
+    # Build cook stats from history
     cook_stats = {}
     for entry in cooking_history:
         key = entry["name"].lower()
         if key not in cook_stats:
-            cook_stats[key] = {"count": 0, "first_date": entry["date"], "name": entry["name"]}
+            cook_stats[key] = {
+                "count": 0,
+                "first_date": entry["date"],
+                "name": entry["name"]
+            }
         cook_stats[key]["count"] += 1
 
-    # Get all known recipes from the database (the "collectible" pool)
+    # Get all recipes from database
     all_db_recipes = list(db.recipes.find())
 
     collection = []
     seen_names = set()
 
     for recipe in all_db_recipes:
+        recipe_id = str(recipe["_id"])
         name_lower = recipe["name"].lower()
         seen_names.add(name_lower)
 
-        if name_lower in cook_stats:
-            collection.append({
-                "name": recipe["name"],
-                "category": recipe.get("category", "Other"),
-                "unlocked": True,
-                "cook_count": cook_stats[name_lower]["count"],
-                "first_cooked": cook_stats[name_lower]["first_date"]
-            })
+        tier = get_recipe_tier(recipe.get("estimated_total_cost", "₱0"))
+        is_common = tier["unlock_cost"] == 0
+        is_unlocked_by_points = recipe_id in unlocked_recipes
+        is_cooked = name_lower in cook_stats
+
+        # Level requirement
+        required_level = recipe.get("required_level", "Beginner Cook")
+        level_meta = LEVEL_META.get(required_level, LEVEL_META["Beginner Cook"])
+        meets_level = user_meets_level(user_data.get("level", "Beginner Cook"), required_level)
+        is_level_locked = not meets_level
+
+        # Access rules:
+        # Step 1: Must meet level requirement
+        # Step 2: If tier is not Common, must also unlock with points
+        can_access = meets_level and (is_common or is_unlocked_by_points)
+        can_afford = user_points >= tier["unlock_cost"]
+
+        # Why is it locked? (for display)
+        if is_level_locked:
+            lock_reason = "level"
+        elif not is_common and not is_unlocked_by_points:
+            lock_reason = "points"
         else:
-            collection.append({
-                "name": recipe["name"],
-                "category": recipe.get("category", "Other"),
-                "unlocked": False,
-                "cook_count": 0,
-                "first_cooked": None
-            })
+            lock_reason = "none"
 
-    # Add any cooked recipes that came from AI (not in the recipes collection at all)
-    for key, stats in cook_stats.items():
-        if key not in seen_names:
-            collection.append({
-                "name": stats["name"],
-                "category": "AI Discovery",
-                "unlocked": True,
-                "cook_count": stats["count"],
-                "first_cooked": stats["first_date"]
-            })
+        collection.append({
+            "id": recipe_id,
+            "name": recipe["name"],
+            "category": recipe.get("category", "Other"),
+            "estimated_cost": recipe.get("estimated_total_cost", "₱0"),
+            "tier": tier,
+            "can_access": can_access,
+            "is_cooked": is_cooked,
+            "cook_count": cook_stats[name_lower]["count"] if is_cooked else 0,
+            "first_cooked": cook_stats[name_lower]["first_date"] if is_cooked else None,
+            "can_afford": can_afford,
+            "is_common": is_common,
+            "required_level": required_level,
+            "level_meta": level_meta,
+            "meets_level": meets_level,
+            "is_level_locked": is_level_locked,
+            "lock_reason": lock_reason
+        })
 
-    # Sort: unlocked first, then alphabetically
-    collection = sorted(collection, key=lambda c: (not c["unlocked"], c["name"]))
+    # Sort: common first → by tier → by cook status
+    tier_order = {"Common": 0, "Uncommon": 1, "Rare": 2, "Legendary": 3}
+    collection = sorted(
+        collection,
+        key=lambda c: (
+            tier_order.get(c["tier"]["name"], 0),
+            not c["can_access"],
+            not c["is_cooked"]
+        )
+    )
 
+    # Stats
     total_count = len(collection)
-    unlocked_count = sum(1 for c in collection if c["unlocked"])
-    completion_pct = int((unlocked_count / total_count * 100)) if total_count > 0 else 0
+    cooked_count = sum(1 for c in collection if c["is_cooked"])
+    unlocked_count = sum(1 for c in collection if c["can_access"])
+    completion_pct = int((cooked_count / total_count * 100)) if total_count > 0 else 0
+    is_complete = total_count > 0 and cooked_count == total_count
 
-    is_complete = total_count > 0 and unlocked_count == total_count
-
-    # Award the Master Collector badge if fully complete and not already awarded
+    # Badge for full completion
     if is_complete:
-        user_data_check = db.users.find_one({"_id": ObjectId(current_user.id)})
-        current_badges = user_data_check.get("badges", [])
+        current_badges = user_data.get("badges", [])
         if "📚 Master Collector" not in current_badges:
             current_badges.append("📚 Master Collector")
             db.users.update_one(
                 {"_id": ObjectId(current_user.id)},
                 {"$set": {"badges": current_badges}}
             )
-            flash("🎉🎉 INCREDIBLE! You've collected EVERY recipe! Badge Unlocked: Master Collector!", "success")
+            flash("🎉🎉 INCREDIBLE! You collected EVERY recipe! Badge Unlocked: Master Collector!", "success")
 
-    # Group by category for filtering
     categories = sorted(set(c["category"] for c in collection))
+    tiers = ["Common", "Uncommon", "Rare", "Legendary"]
 
     return render_template("cookbook.html",
                            collection=collection,
                            total_count=total_count,
+                           cooked_count=cooked_count,
                            unlocked_count=unlocked_count,
                            completion_pct=completion_pct,
+                           is_complete=is_complete,
                            categories=categories,
-                           is_complete=is_complete)
+                           tiers=tiers,
+                           user_points=user_points,
+                           user_level=user_data.get("level", "Beginner Cook"),
+                           level_meta=LEVEL_META)
 # ─────────────────────────────────────────────
 # RECIPE SHARE CARD
 # ─────────────────────────────────────────────
@@ -1823,3 +2038,675 @@ def kick_member(member_id):
 
     flash("Member removed from household.", "success")
     return redirect(url_for("household"))
+# ─────────────────────────────────────────────
+# COMMUNITY — GLOBAL FEED
+# ─────────────────────────────────────────────
+
+@app.route("/community")
+@login_required
+def community():
+    posts = list(db.community_posts.find().sort("created_at", -1).limit(50))
+
+    enriched_posts = []
+    for post in posts:
+        author = db.users.find_one({"_id": ObjectId(post["user_id"])})
+        comment_count = db.community_comments.count_documents({"post_id": str(post["_id"])})
+        liked_by_me = current_user.username in post.get("likes", [])
+
+        # Get household name if poster is in one
+        household_name = ""
+        if author and author.get("household_id"):
+            hh = db.households.find_one({"_id": ObjectId(author["household_id"])})
+            if hh:
+                household_name = hh["name"]
+                household_id = str(hh["_id"])
+            else:
+                household_id = ""
+        else:
+            household_id = ""
+
+        enriched_posts.append({
+            "id": str(post["_id"]),
+            "content": post.get("content", ""),
+            "recipe_name": post.get("recipe_name", ""),
+            "image": post.get("image", None),
+            "created_at": post.get("created_at").strftime("%b %d, %Y %I:%M %p") if post.get("created_at") else "",
+            "likes": len(post.get("likes", [])),
+            "liked_by_me": liked_by_me,
+            "comment_count": comment_count,
+            "author_username": author["username"] if author else "Unknown",
+            "author_level": author.get("level", "") if author else "",
+            "author_picture": author.get("profile_picture", None) if author else None,
+            "household_name": household_name,
+            "household_id": household_id,
+            "is_mine": post["user_id"] == current_user.id
+        })
+
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+    following = user_data.get("following", [])
+    user_household_id = user_data.get("household_id", "")
+
+    return render_template("community.html",
+                           posts=enriched_posts,
+                           following=following,
+                           current_username=current_user.username,
+                           user_household_id=user_household_id)
+
+
+@app.route("/community/post", methods=["POST"])
+@login_required
+def create_post():
+    content = request.form.get("content", "").strip()
+    recipe_name = request.form.get("recipe_name", "").strip()
+    share_target = request.form.get("share_target", "community")
+    image_data = None
+
+    # Handle image upload (from file or captured photo)
+    files = request.files.getlist("post_image")
+    file = next((f for f in files if f and f.filename != ""), None)
+
+    if file:
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+
+        if file_size > 5 * 1024 * 1024:
+            flash("Image too large. Please choose an image under 5MB.", "danger")
+            return redirect(url_for("community"))
+
+        img_bytes = base64.b64encode(file.read()).decode("utf-8")
+        mime_type = file.content_type or "image/jpeg"
+        image_data = f"data:{mime_type};base64,{img_bytes}"
+
+    # Handle share card image (captured from canvas via hidden input)
+    share_card_image = request.form.get("share_card_image", "").strip()
+    if share_card_image and not image_data:
+        image_data = share_card_image
+
+    if not content and not image_data:
+        flash("Post cannot be empty.", "danger")
+        return redirect(url_for("community"))
+
+    post_doc = {
+        "user_id": current_user.id,
+        "username": current_user.username,
+        "content": content,
+        "recipe_name": recipe_name,
+        "image": image_data,
+        "likes": [],
+        "created_at": datetime.now(),
+        "share_target": share_target
+    }
+
+    db.community_posts.insert_one(post_doc)
+    log_activity("post", current_user.username, content[:50] if content else f"Shared {recipe_name}")
+
+    flash("Posted successfully!", "success")
+
+    if share_target == "household":
+        return redirect(url_for("household"))
+    return redirect(url_for("community"))
+
+
+@app.route("/community/post/<post_id>/delete", methods=["POST"])
+@login_required
+def delete_post(post_id):
+    post = db.community_posts.find_one({"_id": ObjectId(post_id)})
+
+    if not post:
+        flash("Post not found.", "danger")
+        return redirect(url_for("community"))
+
+    if post["user_id"] != current_user.id:
+        flash("You can only delete your own posts.", "danger")
+        return redirect(url_for("community"))
+
+    db.community_posts.delete_one({"_id": ObjectId(post_id)})
+    db.community_comments.delete_many({"post_id": post_id})
+    flash("Post deleted.", "success")
+    return redirect(url_for("community"))
+
+
+@app.route("/community/post/<post_id>/like", methods=["POST"])
+@login_required
+def like_post(post_id):
+    post = db.community_posts.find_one({"_id": ObjectId(post_id)})
+
+    if not post:
+        return redirect(url_for("community"))
+
+    if current_user.username in post.get("likes", []):
+        db.community_posts.update_one(
+            {"_id": ObjectId(post_id)},
+            {"$pull": {"likes": current_user.username}}
+        )
+    else:
+        db.community_posts.update_one(
+            {"_id": ObjectId(post_id)},
+            {"$push": {"likes": current_user.username}}
+        )
+
+    # Return to wherever the user came from
+    referrer = request.referrer
+    if referrer:
+        return redirect(referrer)
+    return redirect(url_for("community"))
+
+
+@app.route("/community/post/<post_id>/comments")
+@login_required
+def view_comments(post_id):
+    post = db.community_posts.find_one({"_id": ObjectId(post_id)})
+
+    if not post:
+        flash("Post not found.", "danger")
+        return redirect(url_for("community"))
+
+    author = db.users.find_one({"_id": ObjectId(post["user_id"])})
+    comments = list(db.community_comments.find({"post_id": post_id}).sort("created_at", 1))
+
+    enriched_comments = []
+    for comment in comments:
+        commenter = db.users.find_one({"_id": ObjectId(comment["user_id"])})
+        enriched_comments.append({
+            "id": str(comment["_id"]),
+            "content": comment.get("content", ""),
+            "created_at": comment.get("created_at").strftime("%b %d, %Y %I:%M %p") if comment.get("created_at") else "",
+            "author_username": commenter["username"] if commenter else "Unknown",
+            "author_picture": commenter.get("profile_picture", None) if commenter else None,
+            "is_mine": str(comment["user_id"]) == current_user.id
+        })
+
+    liked_by_me = current_user.username in post.get("likes", [])
+
+    post_data = {
+        "id": post_id,
+        "content": post.get("content", ""),
+        "recipe_name": post.get("recipe_name", ""),
+        "created_at": post.get("created_at").strftime("%b %d, %Y %I:%M %p") if post.get("created_at") else "",
+        "likes": len(post.get("likes", [])),
+        "liked_by_me": liked_by_me,
+        "author_username": author["username"] if author else "Unknown",
+        "author_level": author.get("level", "") if author else "",
+        "author_picture": author.get("profile_picture", None) if author else None,
+        "is_mine": post["user_id"] == current_user.id
+    }
+
+    return render_template("community_post.html",
+                           post=post_data,
+                           comments=enriched_comments)
+
+
+@app.route("/community/post/<post_id>/comment", methods=["POST"])
+@login_required
+def add_comment(post_id):
+    content = request.form.get("content", "").strip()
+
+    if not content:
+        flash("Comment cannot be empty.", "danger")
+        return redirect(url_for("view_comments", post_id=post_id))
+
+    db.community_comments.insert_one({
+        "post_id": post_id,
+        "user_id": current_user.id,
+        "username": current_user.username,
+        "content": content,
+        "created_at": datetime.now()
+    })
+
+    return redirect(url_for("view_comments", post_id=post_id))
+
+
+@app.route("/community/comment/<comment_id>/delete", methods=["POST"])
+@login_required
+def delete_comment(comment_id):
+    comment = db.community_comments.find_one({"_id": ObjectId(comment_id)})
+
+    if not comment:
+        flash("Comment not found.", "danger")
+        return redirect(url_for("community"))
+
+    if str(comment["user_id"]) != current_user.id:
+        flash("You can only delete your own comments.", "danger")
+        return redirect(url_for("view_comments", post_id=comment["post_id"]))
+
+    post_id = comment["post_id"]
+    db.community_comments.delete_one({"_id": ObjectId(comment_id)})
+    return redirect(url_for("view_comments", post_id=post_id))
+
+
+# ─────────────────────────────────────────────
+# HOUSEHOLDS DIRECTORY
+# ─────────────────────────────────────────────
+
+@app.route("/households")
+@login_required
+def households_directory():
+    all_households = list(db.households.find())
+
+    enriched = []
+    for hh in all_households:
+        member_count = len(hh.get("members", []))
+        post_count = db.community_posts.count_documents({
+            "user_id": {"$in": hh.get("members", [])}
+        })
+
+        # Get top member by points
+        top_member = None
+        top_points = 0
+        for member_id in hh.get("members", []):
+            member = db.users.find_one({"_id": ObjectId(member_id)})
+            if member and member.get("points", 0) > top_points:
+                top_points = member.get("points", 0)
+                top_member = member["username"]
+
+        enriched.append({
+            "id": str(hh["_id"]),
+            "name": hh["name"],
+            "member_count": member_count,
+            "post_count": post_count,
+            "top_member": top_member,
+            "top_points": top_points,
+            "created_at": hh.get("created_at", "").strftime("%b %d, %Y") if hh.get("created_at") else ""
+        })
+
+    # Sort by member count
+    enriched = sorted(enriched, key=lambda h: h["member_count"], reverse=True)
+
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+    user_household_id = user_data.get("household_id", "")
+
+    return render_template("households_directory.html",
+                           households=enriched,
+                           user_household_id=user_household_id)
+
+
+@app.route("/household/<household_id>/view")
+@login_required
+def view_household(household_id):
+    household = db.households.find_one({"_id": ObjectId(household_id)})
+
+    if not household:
+        flash("Household not found.", "danger")
+        return redirect(url_for("households_directory"))
+
+    # Get members
+    members = []
+    for member_id in household.get("members", []):
+        member = db.users.find_one({"_id": ObjectId(member_id)})
+        if member:
+            week_id = get_current_week_id()
+            week_points = sum(
+                log["points_earned"]
+                for log in db.points_log.find({
+                    "user_id": str(member["_id"]),
+                    "week_id": week_id
+                })
+            )
+            cooking_history = member.get("cooking_history", [])
+            recent_cook = cooking_history[-1]["name"] if cooking_history else "None yet"
+
+            members.append({
+                "username": member["username"],
+                "points": member.get("points", 0),
+                "level": member.get("level", "Beginner Cook"),
+                "profile_picture": member.get("profile_picture", None),
+                "week_points": week_points,
+                "recent_cook": recent_cook
+            })
+
+    members = sorted(members, key=lambda m: m["points"], reverse=True)
+
+    # Get this household's posts
+    member_ids = household.get("members", [])
+    posts = list(db.community_posts.find(
+        {"user_id": {"$in": member_ids}}
+    ).sort("created_at", -1).limit(20))
+
+    enriched_posts = []
+    for post in posts:
+        author = db.users.find_one({"_id": ObjectId(post["user_id"])})
+        comment_count = db.community_comments.count_documents({"post_id": str(post["_id"])})
+        liked_by_me = current_user.username in post.get("likes", [])
+
+        enriched_posts.append({
+            "id": str(post["_id"]),
+            "content": post.get("content", ""),
+            "recipe_name": post.get("recipe_name", ""),
+            "image": post.get("image", None),
+            "created_at": post.get("created_at").strftime("%b %d, %Y %I:%M %p") if post.get("created_at") else "",
+            "likes": len(post.get("likes", [])),
+            "liked_by_me": liked_by_me,
+            "comment_count": comment_count,
+            "author_username": author["username"] if author else "Unknown",
+            "author_level": author.get("level", "") if author else "",
+            "author_picture": author.get("profile_picture", None) if author else None,
+            "is_mine": post["user_id"] == current_user.id
+        })
+
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+    is_member = current_user.id in household.get("members", [])
+
+    return render_template("household_public.html",
+                           household=household,
+                           household_id=household_id,
+                           members=members,
+                           posts=enriched_posts,
+                           is_member=is_member,
+                           current_username=current_user.username)
+
+
+# ─────────────────────────────────────────────
+# FOLLOW / UNFOLLOW
+# ─────────────────────────────────────────────
+
+@app.route("/follow/<username>", methods=["POST"])
+@login_required
+def follow_user(username):
+    if username == current_user.username:
+        flash("You cannot follow yourself.", "danger")
+        return redirect(url_for("community"))
+
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+    following = user_data.get("following", [])
+
+    if username in following:
+        db.users.update_one(
+            {"_id": ObjectId(current_user.id)},
+            {"$pull": {"following": username}}
+        )
+        flash(f"Unfollowed {username}.", "success")
+    else:
+        db.users.update_one(
+            {"_id": ObjectId(current_user.id)},
+            {"$push": {"following": username}}
+        )
+        flash(f"Now following {username}!", "success")
+
+    referrer = request.referrer
+    if referrer:
+        return redirect(referrer)
+    return redirect(url_for("community"))
+# ─────────────────────────────────────────────
+# COOKING EVIDENCE SUBMISSION
+# ─────────────────────────────────────────────
+
+@app.route("/recipe/<recipe_name>/evidence", methods=["POST"])
+@login_required
+def submit_evidence(recipe_name):
+    # Check if already has a pending submission
+    existing = db.cooking_evidence.find_one({
+        "user_id": current_user.id,
+        "recipe_name": recipe_name,
+        "status": "pending"
+    })
+
+    if existing:
+        flash("You already have a pending submission for this recipe.", "danger")
+        return redirect(url_for("recipe_detail", recipe_name=recipe_name))
+
+    if "evidence_photo" not in request.files:
+        flash("Please attach a photo.", "danger")
+        return redirect(url_for("recipe_detail", recipe_name=recipe_name))
+
+    file = request.files["evidence_photo"]
+    if not file or file.filename == "":
+        flash("Please attach a photo.", "danger")
+        return redirect(url_for("recipe_detail", recipe_name=recipe_name))
+
+    # Check file size (max 5MB)
+    file.seek(0, 2)
+    file_size = file.tell()
+    file.seek(0)
+
+    if file_size > 5 * 1024 * 1024:
+        flash("Photo too large. Please use an image under 5MB.", "danger")
+        return redirect(url_for("recipe_detail", recipe_name=recipe_name))
+
+    # Convert to base64
+    img_bytes = base64.b64encode(file.read()).decode("utf-8")
+    mime_type = file.content_type
+    photo_data = f"data:{mime_type};base64,{img_bytes}"
+
+    share_target = request.form.get("share_target", "none")
+
+    # Save to cooking_evidence collection
+    db.cooking_evidence.insert_one({
+        "user_id": current_user.id,
+        "username": current_user.username,
+        "recipe_name": recipe_name,
+        "photo": photo_data,
+        "share_target": share_target,
+        "status": "pending",
+        "submitted_at": datetime.now()
+    })
+
+    flash("📸 Evidence submitted! Your points will be awarded after admin approval.", "success")
+    return redirect(url_for("recipe_detail", recipe_name=recipe_name))
+
+
+# ─────────────────────────────────────────────
+# ADMIN — REVIEW COOKING EVIDENCE
+# ─────────────────────────────────────────────
+
+@app.route("/admin/evidence")
+@login_required
+@admin_required
+def admin_evidence():
+    status_filter = request.args.get("status", "pending")
+
+    if status_filter == "all":
+        submissions = list(db.cooking_evidence.find().sort("submitted_at", -1))
+    else:
+        submissions = list(db.cooking_evidence.find(
+            {"status": status_filter}
+        ).sort("submitted_at", -1))
+
+    pending_count = db.cooking_evidence.count_documents({"status": "pending"})
+
+    return render_template("admin/evidence_review.html",
+                           submissions=submissions,
+                           status_filter=status_filter,
+                           pending_count=pending_count)
+
+
+@app.route("/admin/evidence/<submission_id>/approve", methods=["POST"])
+@login_required
+@admin_required
+def admin_approve_evidence(submission_id):
+    submission = db.cooking_evidence.find_one({"_id": ObjectId(submission_id)})
+
+    if not submission:
+        flash("Submission not found.", "danger")
+        return redirect(url_for("admin_evidence"))
+
+    # Update status
+    db.cooking_evidence.update_one(
+        {"_id": ObjectId(submission_id)},
+        {"$set": {"status": "approved", "reviewed_at": datetime.now()}}
+    )
+
+    # Now run the full mark_cooked logic for this user
+    user_data = db.users.find_one({"username": submission["username"]})
+    if user_data:
+        recipe_name = submission["recipe_name"]
+        cooking_history = user_data.get("cooking_history", [])
+        cooked_names = [h["name"] for h in cooking_history]
+        is_first_time = recipe_name not in cooked_names
+
+        # Add to cooking history
+        db.users.update_one(
+            {"_id": user_data["_id"]},
+            {"$push": {"cooking_history": {
+                "name": recipe_name,
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M")
+            }}}
+        )
+
+        log_activity("cooked", submission["username"], recipe_name)
+
+        # Award points
+        points_earned = 15 if is_first_time else 10
+
+        # Mystery bonus
+        import random
+        bonus_amount = 0
+        roll = random.randint(1, 100)
+        if roll <= 5:
+            bonus_amount = points_earned * 2
+        elif roll <= 15:
+            bonus_amount = random.randint(5, 15)
+
+        total_points_earned = points_earned + bonus_amount
+        new_points = user_data.get("points", 0) + total_points_earned
+
+        # Recalculate level
+        if new_points >= 600:
+            new_level = "Master Chef"
+        elif new_points >= 300:
+            new_level = "Skilled Cook"
+        elif new_points >= 100:
+            new_level = "Home Cook"
+        else:
+            new_level = "Beginner Cook"
+
+        # Check badges
+        new_badges = user_data.get("badges", [])
+        if len(cooking_history) == 0 and "🥄 First Cook" not in new_badges:
+            new_badges.append("🥄 First Cook")
+        if new_points >= 100 and "⭐ Rising Chef" not in new_badges:
+            new_badges.append("⭐ Rising Chef")
+        adobo_count = sum(1 for h in cooking_history if "adobo" in h["name"].lower())
+        if adobo_count >= 2 and "🍗 Adobo Expert" not in new_badges:
+            new_badges.append("🍗 Adobo Expert")
+        if len(cooking_history) >= 4 and "💰 Budget Master" not in new_badges:
+            new_badges.append("💰 Budget Master")
+
+        # Save
+        db.users.update_one(
+            {"_id": user_data["_id"]},
+            {"$set": {
+                "points": new_points,
+                "level": new_level,
+                "badges": new_badges
+            }}
+        )
+
+        # Log points
+        db.points_log.insert_one({
+            "user_id": str(user_data["_id"]),
+            "username": submission["username"],
+            "points_earned": total_points_earned,
+            "reason": f"Cooked {recipe_name} (evidence approved)",
+            "date": datetime.now(),
+            "week_id": get_current_week_id()
+        })
+
+        # Handle share if user requested it
+        share_target = submission.get("share_target", "none")
+        if share_target in ["community", "household"]:
+            db.community_posts.insert_one({
+                "user_id": str(user_data["_id"]),
+                "username": submission["username"],
+                "content": f"Just cooked {recipe_name}! 🍳",
+                "recipe_name": recipe_name,
+                "image": submission["photo"],
+                "likes": [],
+                "created_at": datetime.now(),
+                "share_target": share_target
+            })
+
+    flash(f"✅ Evidence approved! Points awarded to {submission['username']}.", "success")
+    return redirect(url_for("admin_evidence"))
+
+
+@app.route("/admin/evidence/<submission_id>/reject", methods=["POST"])
+@login_required
+@admin_required
+def admin_reject_evidence(submission_id):
+    submission = db.cooking_evidence.find_one({"_id": ObjectId(submission_id)})
+
+    if not submission:
+        flash("Submission not found.", "danger")
+        return redirect(url_for("admin_evidence"))
+
+    db.cooking_evidence.update_one(
+        {"_id": ObjectId(submission_id)},
+        {"$set": {"status": "rejected", "reviewed_at": datetime.now()}}
+    )
+
+    flash(f"❌ Evidence rejected for {submission['username']}.", "success")
+    return redirect(url_for("admin_evidence"))
+# ─────────────────────────────────────────────
+# COOKBOOK UNLOCK RECIPE
+# ─────────────────────────────────────────────
+
+@app.route("/cookbook/unlock/<recipe_id>", methods=["POST"])
+@login_required
+def unlock_recipe(recipe_id):
+    recipe = db.recipes.find_one({"_id": ObjectId(recipe_id)})
+
+    if not recipe:
+        flash("Recipe not found.", "danger")
+        return redirect(url_for("cookbook"))
+
+    # Calculate tier and unlock cost
+    tier = get_recipe_tier(recipe.get("estimated_total_cost", "₱0"))
+    unlock_cost = tier["unlock_cost"]
+
+    # Common recipes are always free
+    if unlock_cost == 0:
+        flash("This recipe is already accessible!", "success")
+        return redirect(url_for("cookbook"))
+
+    # Get user data
+    user_data = db.users.find_one({"_id": ObjectId(current_user.id)})
+    current_points = user_data.get("points", 0)
+    unlocked_recipes = user_data.get("unlocked_recipes", [])
+
+    # Already unlocked?
+    if recipe_id in unlocked_recipes:
+        flash("You have already unlocked this recipe!", "success")
+        return redirect(url_for("cookbook"))
+
+    # Enough points?
+    if current_points < unlock_cost:
+        flash(f"Not enough points! You need {unlock_cost} pts to unlock this {tier['name']} recipe. You have {current_points} pts.", "danger")
+        return redirect(url_for("cookbook"))
+
+    # Deduct points and unlock
+    new_points = current_points - unlock_cost
+
+    # Recalculate level after spending
+    if new_points >= 600:
+        new_level = "Master Chef"
+    elif new_points >= 300:
+        new_level = "Skilled Cook"
+    elif new_points >= 100:
+        new_level = "Home Cook"
+    else:
+        new_level = "Beginner Cook"
+
+    db.users.update_one(
+        {"_id": ObjectId(current_user.id)},
+        {
+            "$set": {"points": new_points, "level": new_level},
+            "$push": {"unlocked_recipes": recipe_id}
+        }
+    )
+
+    # Log the unlock
+    db.points_log.insert_one({
+        "user_id": str(current_user.id),
+        "username": current_user.username,
+        "points_earned": -unlock_cost,
+        "reason": f"Unlocked {tier['name']} recipe: {recipe['name']}",
+        "date": datetime.now(),
+        "week_id": get_current_week_id()
+    })
+
+    flash(f"🎉 {tier['emoji']} {recipe['name']} unlocked! You spent {unlock_cost} points.", "success")
+    return redirect(url_for("cookbook"))
+
+from datetime import datetime, timedelta
+

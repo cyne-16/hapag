@@ -2,92 +2,613 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Cookbook - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.5rem; color: var(--gold);
+            text-shadow: 0 0 18px rgba(245,166,35,.5);
+            display: flex; align-items: center; gap: .4rem;
+        }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .78rem; font-weight: 700;
+            padding: .35rem .75rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+
+        .nav-links a:hover  { color: var(--cream); background: var(--panel); }
+        .nav-links a.active { color: var(--jade); }
+        .nav-links a:last-child { color: var(--orange); border: 1px solid rgba(255,107,53,.3); }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+        .main-container h2 {
+            font-family: var(--font-display);
+            font-size: 1.8rem; color: var(--cream);
+        }
+
+        .main-container > div > div > p { font-size: .9rem; color: var(--muted); font-weight: 600; }
+
+        /* ── CELEBRATION BANNER ── */
+        .celebration-banner {
+            background: linear-gradient(135deg, rgba(245,166,35,.12), rgba(255,107,53,.08));
+            border: 1px solid rgba(245,166,35,.35);
+            border-radius: 16px;
+            padding: 1.6rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .celebration-icon { font-size: 2rem; margin-bottom: .5rem; }
+
+        .celebration-banner h2 {
+            font-family: var(--font-display);
+            font-size: 1.4rem; color: var(--gold); margin-bottom: .4rem;
+        }
+
+        .celebration-banner p { font-size: .88rem; color: var(--cream); font-weight: 600; }
+
+        /* ── POINTS BADGE ── */
+        .points-display-badge {
+            background: linear-gradient(135deg, var(--gold), #FFD66B);
+            color: var(--night);
+            font-family: var(--font-display);
+            font-size: .9rem;
+            border-radius: 99px;
+            padding: .55rem 1.2rem;
+            white-space: nowrap;
+            box-shadow: 0 3px 12px rgba(245,166,35,.3);
+        }
+
+        /* ── ALERTS ── */
+        .alert {
+            border-radius: 10px; padding: .7rem 1rem;
+            font-size: .82rem; font-weight: 700;
+            margin-bottom: 1.2rem; border: 1px solid transparent;
+        }
+        .alert.error,.alert.danger { background:rgba(255,107,53,.12); border-color:rgba(255,107,53,.35); color:var(--orange); }
+        .alert.success { background:rgba(46,204,113,.1); border-color:rgba(46,204,113,.3); color:var(--jade); }
+        .alert.info    { background:rgba(56,189,248,.1); border-color:rgba(56,189,248,.3); color:var(--sky); }
+
+        /* ── STATS ROW ── */
+        .stats-row {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .stat-box {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.1rem 1.2rem;
+            position: relative; overflow: hidden;
+            transition: border-color .2s;
+        }
+
+        .stat-box::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--sb-accent, var(--gold));
+            border-radius: 14px 14px 0 0;
+        }
+
+        .stat-box:nth-child(1) { --sb-accent: var(--sky); }
+        .stat-box:nth-child(2) { --sb-accent: var(--gold); }
+        .stat-box:nth-child(3) { --sb-accent: var(--orange); }
+        .stat-box:nth-child(4) { --sb-accent: var(--jade); }
+
+        .stat-box:hover { border-color: var(--sb-accent, var(--gold)); }
+
+        .stat-box h3 {
+            font-family: var(--font-body);
+            font-size: .78rem; font-weight: 800; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .05em; margin-bottom: .4rem;
+        }
+
+        .stat-box .stat-number {
+            font-family: var(--font-display);
+            font-size: 1.6rem; color: var(--sb-accent, var(--gold));
+        }
+
+        /* ── PROGRESS BAR ── */
+        .progress-section p {
+            font-size: .85rem; color: var(--muted); font-weight: 700; margin-bottom: .5rem;
+        }
+
+        .progress-bar {
+            width: 100%; height: 12px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%; border-radius: 99px;
+            background: linear-gradient(90deg, var(--sky), var(--purple));
+            transition: width .5s ease;
+        }
+
+        .progress-fill-complete { background: linear-gradient(90deg, var(--jade), #00ff9d); }
+
+        /* ── RARITY / LEVEL LEGEND ── */
+        .legend-wrap {
+            display: flex; flex-direction: column; gap: .8rem;
+            margin: 1.2rem 0;
+        }
+
+        .legend-label {
+            font-size: .8rem; font-weight: 800; color: var(--muted); margin-bottom: .5rem;
+        }
+
+        .rarity-legend { display: flex; gap: .6rem; flex-wrap: wrap; }
+
+        .rarity-badge {
+            font-size: .78rem; font-weight: 800;
+            padding: .4rem .85rem;
+            border-radius: 99px;
+            border: 1px solid transparent;
+        }
+
+        /* ── FILTERS ── */
+        .filters-row { display: flex; gap: .75rem; flex-wrap: wrap; margin: 1.2rem 0; }
+
+        .filters-row select {
+            padding: .65rem .9rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--cream);
+            font-family: var(--font-body);
+            font-size: .85rem; font-weight: 700;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        .filters-row select:focus { border-color: var(--sky); }
+
+        /* ── COOKBOOK GRID ── */
+        .cookbook-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        /* ── COOKBOOK CARD ── */
+        /* Note: border-color and background for each card are set inline via Jinja
+           (item.tier.color, item.can_access) — kept exactly as in original markup. */
+        .cookbook-card-new {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.2rem 1.1rem;
+            position: relative;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+
+        .cookbook-card-new:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(0,0,0,.35);
+        }
+
+        .cookbook-tier-badge {
+            display: inline-block;
+            font-size: .68rem; font-weight: 800;
+            padding: .25rem .65rem;
+            border-radius: 99px;
+            margin-bottom: .7rem;
+        }
+
+        .cookbook-card-icon {
+            font-size: 1.8rem;
+            margin-bottom: .5rem;
+        }
+
+        .cookbook-card-name {
+            font-family: var(--font-display);
+            font-size: .95rem; color: var(--cream);
+            line-height: 1.25; margin-bottom: .35rem;
+        }
+
+        .cookbook-category {
+            display: inline-block;
+            font-size: .7rem; font-weight: 800; color: var(--sky);
+            background: rgba(56,189,248,.1);
+            border: 1px solid rgba(56,189,248,.25);
+            border-radius: 99px;
+            padding: .15rem .6rem;
+        }
+
+        .cookbook-card-new p { color: var(--muted); }
+
+        .cookbook-stat { font-size: .82rem; font-weight: 800; margin-top: .5rem; }
+
+        .cookbook-date { font-size: .72rem; color: var(--muted); font-weight: 600; }
+
+        .level-lock-badge {
+            display: inline-block;
+            font-size: .72rem; font-weight: 800;
+            padding: .3rem .7rem;
+            border-radius: 99px;
+        }
+
+        /* ── BUTTONS ── */
+        .btn {
+            background: linear-gradient(135deg, var(--jade), #00d084);
+            color: var(--night); border: none; border-radius: 8px;
+            font-family: var(--font-display);
+            cursor: pointer; text-decoration: none;
+            transition: transform .18s, filter .18s;
+            box-shadow: 0 3px 12px rgba(46,204,113,.25);
+        }
+
+        .btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+        .unlock-btn {
+            width: 100%;
+            border: none; border-radius: 8px;
+            color: var(--night);
+            font-family: var(--font-display);
+            font-size: .85rem;
+            padding: .6rem;
+            cursor: pointer;
+            margin-top: .4rem;
+            transition: transform .18s, filter .18s;
+        }
+
+        .unlock-btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+
+        .unlock-btn-disabled {
+            width: 100%;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-family: var(--font-body);
+            font-weight: 800;
+            font-size: .82rem;
+            padding: .6rem;
+            border-radius: 8px;
+            cursor: not-allowed;
+            margin-top: .4rem;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .empty-state p { font-size: .9rem; color: var(--muted); font-weight: 600; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 720px) {
+            .main-container { padding: 1.5rem 1rem 3rem; }
+            .stats-row { grid-template-columns: 1fr 1fr !important; }
+            .cookbook-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag</div>
+       <div class="nav-brand">
+    <img src="{{ url_for('static', filename='images/icon.png') }}"
+         alt="Hapag"
+         style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;">
+    Hapag
+</div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard') }}">Home</a>
-            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('recommend') }}">Recipes</a>
             <a href="{{ url_for('challenges') }}">Challenges</a>
             <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            <a href="{{ url_for('community') }}">Community</a>
             <a href="{{ url_for('cookbook') }}">Cookbook</a>
             <a href="{{ url_for('profile') }}">Profile</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
         </div>
     </nav>
 
     <div class="main-container">
-        <h2>📖 My Cookbook Collection</h2>
-        <p style="color:#888; margin-top:6px;">
-            Collect every Filipino dish by cooking it at least once!
-        </p>
 
-        <!-- COMPLETION PROGRESS -->
         {% if is_complete %}
-<!-- CELEBRATION BANNER -->
-    <div class="celebration-banner">
-        <div class="celebration-icon">🏆🎉🏆</div>
-        <h2>Collection Complete!</h2>
-        <p>You've cooked every single recipe in Hapag. You're a true Master Collector!</p>
-    </div>
-    {% endif %}
+        <div class="celebration-banner">
+            <div class="celebration-icon">🏆🎉🏆</div>
+            <h2>Collection Complete!</h2>
+            <p>You've cooked every single recipe in Hapag. You're a true Master Collector!</p>
+        </div>
+        {% endif %}
 
-<!-- COMPLETION PROGRESS -->
-    <div class="progress-section" style="margin-top:20px;">
-        <h3>Collection Progress</h3>
-        <p>{{ unlocked_count }} / {{ total_count }} recipes unlocked ({{ completion_pct }}%)</p>
-        <div class="progress-bar">
-        <div class="progress-fill {% if is_complete %}progress-fill-complete{% endif %}" style="width: {{ completion_pct }}%"></div>
-    </div>
-</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-top:20px;">
+            <div>
+                <h2>📖 My Cookbook</h2>
+                <p>
+                    Unlock rare recipes with your points and cook them all!
+                </p>
+            </div>
+            <div class="points-display-badge">
+                ⭐ {{ user_points }} pts available
+            </div>
+        </div>
 
-        <!-- CATEGORY FILTER -->
-        <div style="margin: 20px 0;">
-            <select id="categoryFilter" onchange="filterByCategory()"
-                    style="padding:10px; border-radius:8px; border:1px solid #ddd; font-size:0.9rem;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <!-- STATS ROW -->
+        <div class="stats-row" style="grid-template-columns:repeat(4,1fr); margin-top:20px;">
+            <div class="stat-box">
+                <h3>📖 Total</h3>
+                <p class="stat-number">{{ total_count }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>🔓 Unlocked</h3>
+                <p class="stat-number">{{ unlocked_count }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>🍳 Cooked</h3>
+                <p class="stat-number">{{ cooked_count }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>✅ Progress</h3>
+                <p class="stat-number">{{ completion_pct }}%</p>
+            </div>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="progress-section" style="margin-top:16px;">
+            <p>{{ cooked_count }} / {{ total_count }} recipes cooked</p>
+            <div class="progress-bar">
+                <div class="progress-fill {% if is_complete %}progress-fill-complete{% endif %}"
+                     style="width: {{ completion_pct }}%"></div>
+            </div>
+        </div>
+
+        <!-- RARITY LEGEND -->
+        <div class="legend-wrap">
+            <div>
+                <p class="legend-label">
+                    💰 Rarity (unlock with points):
+                </p>
+                <div class="rarity-legend">
+                    <span class="rarity-badge" style="background:rgba(46,204,113,.12); color:#3ddc84;">🟢 Common — Free (₱0–150)</span>
+                    <span class="rarity-badge" style="background:rgba(56,189,248,.12); color:#5cc9f5;">🔵 Uncommon — 100 pts (₱151–300)</span>
+                    <span class="rarity-badge" style="background:rgba(168,85,247,.12); color:#c084fc;">🟣 Rare — 300 pts (₱301–500)</span>
+                    <span class="rarity-badge" style="background:rgba(245,166,35,.12); color:#f5b942;">🟡 Legendary — 600 pts (₱501+)</span>
+                </div>
+            </div>
+            <div>
+                <p class="legend-label">
+                    🏅 Level Exclusive (reach the level to access):
+                </p>
+                <div class="rarity-legend">
+                    <span class="rarity-badge" style="background:rgba(46,204,113,.12); color:#3ddc84;">🟢 Beginner Cook — All recipes</span>
+                    <span class="rarity-badge" style="background:rgba(56,189,248,.12); color:#5cc9f5;">🔵 Home Cook — Exclusive recipes</span>
+                    <span class="rarity-badge" style="background:rgba(168,85,247,.12); color:#c084fc;">🟣 Skilled Cook — Exclusive recipes</span>
+                    <span class="rarity-badge" style="background:rgba(245,166,35,.12); color:#f5b942;">🟡 Master Chef — Exclusive recipes</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filters-row">
+            <select id="categoryFilter" onchange="filterCards()">
                 <option value="all">All Categories</option>
                 {% for cat in categories %}
                     <option value="{{ cat }}">{{ cat }}</option>
                 {% endfor %}
             </select>
+
+            <select id="tierFilter" onchange="filterCards()">
+                <option value="all">All Rarities</option>
+                {% for tier in tiers %}
+                    <option value="{{ tier }}">{{ tier }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="statusFilter" onchange="filterCards()">
+                <option value="all">All Status</option>
+                <option value="cooked">✅ Cooked</option>
+                <option value="unlocked">🔓 Unlocked (not cooked)</option>
+                <option value="locked">🔒 Locked</option>
+                <option value="level-locked">🏅 Level Locked</option>
+            </select>
         </div>
 
-        <!-- COLLECTION GRID -->
+        <!-- RECIPE COLLECTION GRID -->
         <div class="cookbook-grid" id="cookbookGrid">
             {% for item in collection %}
-            <div class="cookbook-card {% if not item.unlocked %}cookbook-locked{% endif %}"
-                 data-category="{{ item.category }}">
-                <div class="cookbook-icon">
-                    {% if item.unlocked %}🍲{% else %}🔒{% endif %}
+            <div class="cookbook-card-new"
+                 data-category="{{ item.category }}"
+                 data-tier="{{ item.tier.name }}"
+                 data-status="{% if item.is_cooked %}cooked{% elif item.can_access %}unlocked{% elif item.lock_reason == 'level' %}level-locked{% else %}locked{% endif %}"
+                 style="border-color: {{ item.tier.color }}40;
+                        background: {% if not item.can_access %}var(--panel){% else %}var(--deep){% endif %};">
+
+                <!-- TIER BADGE -->
+                <div class="cookbook-tier-badge"
+                     style="background:{{ item.tier.bg_color }};
+                            color:{{ item.tier.color }};">
+                    {{ item.tier.emoji }} {{ item.tier.name }}
                 </div>
-                <h4>{% if item.unlocked %}{{ item.name }}{% else %}???{% endif %}</h4>
+
+                <!-- RECIPE ICON -->
+                <div class="cookbook-card-icon">
+                    {% if not item.can_access %}
+                        🔒
+                    {% elif item.is_cooked %}
+                        ✅
+                    {% else %}
+                        🍲
+                    {% endif %}
+                </div>
+
+                <!-- RECIPE NAME -->
+                <h4 class="cookbook-card-name">
+                    {% if item.can_access %}
+                        {{ item.name }}
+                    {% else %}
+                        ???
+                    {% endif %}
+                </h4>
+
+                <!-- CATEGORY -->
                 <span class="cookbook-category">{{ item.category }}</span>
-                {% if item.unlocked %}
-                    <p class="cookbook-stat">Cooked {{ item.cook_count }}x</p>
-                    <p class="cookbook-date">Since {{ item.first_cooked.split(' ')[0] if item.first_cooked else '' }}</p>
+
+                <!-- COST -->
+                <p style="font-size:0.8rem; margin:6px 0;">
+                    💰 {{ item.estimated_cost }}
+                </p>
+
+                <!-- STATUS INFO -->
+                {% if item.is_cooked %}
+                    <p class="cookbook-stat" style="color:var(--jade);">
+                        ✅ Cooked {{ item.cook_count }}x
+                    </p>
+                    <p class="cookbook-date">
+                        Since {{ item.first_cooked.split(' ')[0] if item.first_cooked else '' }}
+                    </p>
+                    <a href="{{ url_for('recipe_detail', recipe_name=item.name) }}"
+                       class="btn" style="width:100%; text-align:center;
+                                          display:block; margin-top:10px;
+                                          font-size:0.85rem; padding:8px;">
+                        View Recipe
+                    </a>
+
+                {% elif item.can_access %}
+                    <p class="cookbook-stat" style="color:var(--sky);">
+                        🔓 Unlocked — not cooked yet
+                    </p>
+                    <a href="{{ url_for('recipe_detail', recipe_name=item.name) }}"
+                       class="btn" style="width:100%; text-align:center;
+                                          display:block; margin-top:10px;
+                                          font-size:0.85rem; padding:8px;">
+                        Cook This!
+                    </a>
+
                 {% else %}
-                    <p class="cookbook-stat" style="color:#bbb;">Not yet discovered</p>
-                {% endif %}
+    {% if item.lock_reason == "level" %}
+        <!-- LEVEL LOCKED -->
+        <div class="level-lock-badge"
+             style="background:{{ item.level_meta.bg_color }};
+                    color:{{ item.level_meta.color }};">
+            {{ item.level_meta.emoji }} {{ item.required_level }} Only
+        </div>
+        <p class="cookbook-stat" style="color:var(--muted); margin-top:8px;">
+            🔒 Reach {{ item.required_level }} to unlock
+        </p>
+        <p style="font-size:0.75rem; margin-bottom:8px;">
+            Your level: {{ user_level }}
+        </p>
+        <button class="unlock-btn-disabled" disabled>
+            🏅 Level Up to Access
+        </button>
+
+    {% elif item.lock_reason == "points" %}
+        <!-- POINTS LOCKED (level requirement already met) -->
+        <p class="cookbook-stat" style="color:var(--muted);">
+            🔒 Requires {{ item.tier.unlock_cost }} pts
+        </p>
+        <p style="font-size:0.75rem; margin-bottom:8px;">
+            You have {{ user_points }} pts
+        </p>
+
+        {% if item.can_afford %}
+            <form method="POST"
+                  action="{{ url_for('unlock_recipe', recipe_id=item.id) }}"
+                  onsubmit="return confirm('Spend {{ item.tier.unlock_cost }} points to unlock this {{ item.tier.name }} recipe?')">
+                <button type="submit" class="unlock-btn"
+                        style="background:{{ item.tier.color }};">
+                    🔓 Unlock ({{ item.tier.unlock_cost }} pts)
+                </button>
+            </form>
+        {% else %}
+            <button class="unlock-btn-disabled" disabled>
+                🔒 Need {{ item.tier.unlock_cost - user_points }} more pts
+            </button>
+        {% endif %}
+    {% endif %}
+{% endif %}
+
             </div>
             {% endfor %}
         </div>
+
+        {% if collection | length == 0 %}
+        <div class="empty-state" style="margin-top:40px;">
+            <p>No recipes in the database yet.</p>
+            <p>Ask your admin to add some recipes!</p>
+        </div>
+        {% endif %}
+
     </div>
 
     <script>
-        function filterByCategory() {
-            const selected = document.getElementById('categoryFilter').value;
-            const cards = document.querySelectorAll('.cookbook-card');
+        function filterCards() {
+            const category = document.getElementById('categoryFilter').value;
+            const tier = document.getElementById('tierFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            const cards = document.querySelectorAll('.cookbook-card-new');
 
             cards.forEach(card => {
-                if (selected === 'all' || card.getAttribute('data-category') === selected) {
-                    card.style.display = '';
-                } else {
-                    card.style.display = 'none';
-                }
+                const matchCategory = category === 'all' || card.dataset.category === category;
+                const matchTier = tier === 'all' || card.dataset.tier === tier;
+                const matchStatus = status === 'all' || card.dataset.status === status;
+
+                card.style.display = (matchCategory && matchTier && matchStatus) ? '' : 'none';
             });
         }
     </script>

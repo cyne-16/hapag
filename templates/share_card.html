@@ -2,114 +2,613 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Share Card - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky !important;
+            top: 0 !important; left: 0 !important; right: 0 !important;
+            bottom: unset !important; width: 100% !important;
+            z-index: 100 !important;
+            background: rgba(13,27,42,.95) !important;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border) !important;
+            display: flex !important; flex-direction: row !important;
+            align-items: center !important; justify-content: space-between !important;
+            padding: 0 2rem !important; height: 60px !important;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.5rem; color: var(--gold);
+            text-shadow: 0 0 18px rgba(245,166,35,.5);
+            display: flex; align-items: center; gap: .4rem;
+        }
+
+        .nav-brand img { width: 32px; height: 32px; object-fit: contain; }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .78rem; font-weight: 700;
+            padding: .35rem .75rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+
+        .nav-links a:hover { color: var(--cream); background: var(--panel); }
+        .nav-links a:last-child { color: var(--orange); border: 1px solid rgba(255,107,53,.3); }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container { max-width: 1000px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+        /* ── PAGE HEADER ── */
+        .page-header { margin-bottom: .4rem; }
+
+        .page-header h2 {
+            font-family: var(--font-display);
+            font-size: 2rem; color: var(--cream); line-height: 1.1;
+        }
+
+        .page-header h2 span { color: var(--gold); }
+
+        .page-header p { font-size: .88rem; color: var(--muted); font-weight: 600; margin-top: .3rem; margin-bottom: 1.8rem; }
+
+        /* ── SECTION LABEL ── */
+        .section-label {
+            font-size: .7rem; font-weight: 800;
+            letter-spacing: .15em; text-transform: uppercase;
+            color: var(--muted); margin-bottom: 1rem;
+            display: flex; align-items: center; gap: .6rem;
+        }
+
+        .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        /* ── FLASH ── */
+        .alert {
+            border-radius: 10px; padding: .7rem 1rem;
+            font-size: .82rem; font-weight: 700;
+            margin-bottom: 1.2rem; border: 1px solid transparent;
+        }
+        .alert.error,.alert.danger { background:rgba(255,107,53,.12); border-color:rgba(255,107,53,.35); color:var(--orange); }
+        .alert.success { background:rgba(46,204,113,.1); border-color:rgba(46,204,113,.3); color:var(--jade); }
+        .alert.info    { background:rgba(56,189,248,.1); border-color:rgba(56,189,248,.3); color:var(--sky); }
+
+        /* ── GRID ── */
+        .share-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        /* ── CARD COLUMN ── */
+        .card-column h3 {
+            font-family: var(--font-display);
+            font-size: 1rem; color: var(--muted);
+            letter-spacing: .08em; text-transform: uppercase;
+            margin-bottom: .9rem;
+        }
+
+        /* ════════════════════════════════════
+           THE SHARE CARD — the cool part
+        ════════════════════════════════════ */
+        .share-card-container {
+            background: linear-gradient(145deg, #0D1B2A 0%, #112236 40%, #1a2e47 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            font-family: var(--font-body);
+            box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(245,166,35,.2);
+        }
+
+        /* animated top shimmer border */
+        .share-card-container::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--orange), var(--purple), var(--sky), var(--jade), var(--gold));
+            background-size: 300% 100%;
+            animation: rainbowShift 4s linear infinite;
+        }
+
+        @keyframes rainbowShift {
+            0%   { background-position: 0% 0; }
+            100% { background-position: 300% 0; }
+        }
+
+        /* background glow blobs */
+        .share-card-container::after {
+            content: '';
+            position: absolute; inset: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 60% 40% at 20% 30%, rgba(245,166,35,.1) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 50% at 80% 70%, rgba(168,85,247,.08) 0%, transparent 60%);
+        }
+
+        /* ── CARD HEADER ── */
+        .share-card-header {
+            padding: 1.2rem 1.4rem .8rem;
+            display: flex; align-items: center; justify-content: space-between;
+            position: relative; z-index: 1;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+
+        .share-card-logo {
+            font-family: var(--font-display);
+            font-size: 1.1rem; color: var(--gold);
+            text-shadow: 0 0 14px rgba(245,166,35,.5);
+            display: flex; align-items: center; gap: .35rem;
+        }
+
+        .share-card-logo img { width: 22px; height: 22px; object-fit: contain; }
+
+        .share-card-tagline {
+            font-size: .65rem; font-weight: 800;
+            letter-spacing: .12em; text-transform: uppercase;
+            color: rgba(255,248,238,.35);
+        }
+
+        /* ── CARD BODY ── */
+        .share-card-body {
+            padding: 1.4rem 1.4rem 1rem;
+            position: relative; z-index: 1;
+            display: flex; flex-direction: column; align-items: center;
+            text-align: center;
+        }
+
+        .share-card-dish-icon {
+            font-size: 3.2rem;
+            filter: drop-shadow(0 6px 18px rgba(0,0,0,.5));
+            margin-bottom: .6rem;
+            animation: dishFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes dishFloat {
+            0%,100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
+        }
+
+        .share-card-recipe-name {
+            font-family: var(--font-display);
+            font-size: 1.5rem; color: var(--cream); line-height: 1.1;
+            margin-bottom: .5rem;
+            text-shadow: 0 2px 8px rgba(0,0,0,.4);
+        }
+
+        .share-card-category {
+            display: inline-block;
+            background: rgba(168,85,247,.15);
+            border: 1px solid rgba(168,85,247,.3);
+            color: var(--purple); border-radius: 99px;
+            padding: .15rem .7rem; font-size: .7rem; font-weight: 800;
+            letter-spacing: .06em; margin-bottom: 1.2rem;
+        }
+
+        /* stats row */
+        .share-card-stats {
+            display: flex; align-items: center; gap: 0;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 12px; padding: .8rem 0;
+            width: 100%; margin-bottom: 1.2rem;
+        }
+
+        .share-card-stat {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; gap: .2rem;
+        }
+
+        .share-card-stat-divider {
+            width: 1px; height: 36px;
+            background: rgba(255,255,255,.1);
+        }
+
+        .share-stat-number {
+            font-family: var(--font-display);
+            font-size: 1.4rem; color: var(--gold);
+            text-shadow: 0 0 12px rgba(245,166,35,.4);
+        }
+
+        .share-stat-label {
+            font-size: .62rem; font-weight: 800;
+            letter-spacing: .08em; text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        /* user info */
+        .share-card-user-info {
+            display: flex; align-items: center; gap: .8rem;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 12px; padding: .7rem 1rem;
+            width: 100%;
+        }
+
+        .share-card-avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            border: 2px solid var(--gold);
+            box-shadow: 0 0 10px rgba(245,166,35,.3);
+            overflow: hidden; display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; background: var(--panel); flex-shrink: 0;
+        }
+
+        .share-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .share-card-username {
+            font-family: var(--font-display);
+            font-size: 1rem; color: var(--cream);
+        }
+
+        .share-card-level {
+            font-size: .72rem; font-weight: 800;
+            color: var(--jade); letter-spacing: .05em;
+        }
+
+        /* ── CARD FOOTER ── */
+        .share-card-footer {
+            padding: .7rem 1.4rem;
+            border-top: 1px solid rgba(255,255,255,.06);
+            font-size: .7rem; font-weight: 700;
+            color: rgba(255,248,238,.3);
+            text-align: center; letter-spacing: .06em;
+            position: relative; z-index: 1;
+        }
+
+        /* ── DOWNLOAD BUTTON ── */
+        .btn-download {
+            width: 100%; margin-top: .9rem;
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            color: var(--night); border: none; border-radius: 10px;
+            padding: .85rem; font-family: var(--font-display);
+            font-size: 1rem; letter-spacing: .04em; cursor: pointer;
+            transition: transform .18s, box-shadow .18s, filter .18s;
+            box-shadow: 0 4px 18px rgba(245,166,35,.3);
+        }
+
+        .btn-download:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(245,166,35,.45); filter: brightness(1.08); }
+
+        /* ── SHARE FORM PANEL ── */
+        .form-panel {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 18px; padding: 1.6rem;
+            position: relative; overflow: hidden;
+        }
+
+        .form-panel::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--purple), var(--sky));
+            border-radius: 18px 18px 0 0;
+        }
+
+        /* field */
+        .field-group { margin-bottom: 1rem; }
+
+        .field-label {
+            display: block; font-size: .72rem; font-weight: 800;
+            letter-spacing: .1em; text-transform: uppercase;
+            color: var(--muted); margin-bottom: .4rem;
+        }
+
+        .form-panel textarea {
+            width: 100%; background: var(--panel);
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: .78rem .9rem; color: var(--cream);
+            font-family: var(--font-body); font-size: .88rem; font-weight: 600;
+            outline: none; resize: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .form-panel textarea:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(168,85,247,.15); }
+        .form-panel textarea::placeholder { color: var(--muted); }
+
+        .form-panel select {
+            width: 100%; background: var(--panel);
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: .78rem .9rem; color: var(--cream);
+            font-family: var(--font-body); font-size: .88rem; font-weight: 600;
+            outline: none; appearance: none;
+            transition: border-color .2s;
+        }
+
+        .form-panel select:focus { border-color: var(--purple); }
+        .form-panel select option { background: var(--panel); }
+
+        /* attach row */
+        .attach-row { display: flex; gap: .7rem; margin-bottom: .9rem; }
+
+        .btn-attach {
+            flex: 1; background: var(--panel);
+            border: 1px solid var(--border); color: var(--cream);
+            border-radius: 8px; padding: .65rem;
+            font-family: var(--font-body); font-size: .82rem; font-weight: 800;
+            cursor: pointer; transition: border-color .2s, background .2s;
+        }
+
+        .btn-attach:hover { border-color: var(--sky); }
+
+        .btn-attach.remove {
+            color: var(--orange); border-color: rgba(255,107,53,.3);
+        }
+
+        .btn-attach.remove:hover { background: rgba(255,107,53,.08); }
+
+        /* card preview in form */
+        .card-preview-wrap {
+            margin-bottom: .9rem;
+            border-radius: 10px; overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .card-preview-wrap img { width: 100%; display: block; }
+
+        .card-preview-hint {
+            font-size: .72rem; font-weight: 700;
+            color: var(--jade); padding: .4rem .6rem;
+            background: rgba(46,204,113,.06);
+            border-top: 1px solid rgba(46,204,113,.15);
+        }
+
+        /* submit */
+        .btn-share-submit {
+            width: 100%; background: linear-gradient(135deg, var(--purple), #9333ea);
+            color: var(--cream); border: none; border-radius: 10px;
+            padding: .85rem; font-family: var(--font-display);
+            font-size: 1rem; letter-spacing: .04em; cursor: pointer;
+            transition: transform .18s, box-shadow .18s, filter .18s;
+            box-shadow: 0 4px 18px rgba(168,85,247,.25);
+        }
+
+        .btn-share-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(168,85,247,.4); filter: brightness(1.1); }
+
+        /* back link */
+        .btn-back {
+            display: block; text-align: center;
+            background: transparent; border: 1px solid var(--border);
+            color: var(--muted); text-decoration: none;
+            border-radius: 10px; padding: .7rem;
+            font-family: var(--font-body); font-size: .82rem; font-weight: 800;
+            margin-top: .8rem; transition: border-color .2s, color .2s;
+        }
+
+        .btn-back:hover { border-color: var(--cream); color: var(--cream); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 680px) {
+            .share-grid { grid-template-columns: 1fr; }
+            .main-container { padding: 1.5rem 1rem 3rem; }
+        }
+    </style>
 </head>
 <body>
 
+    <!-- NAVBAR -->
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag</div>
+        <div class="nav-brand">
+            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
+            Hapag
+        </div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard') }}">Home</a>
-            <a href="{{ url_for('recommend') }}">Get Recipes</a>
+            <a href="{{ url_for('recommend') }}">Recipes</a>
             <a href="{{ url_for('challenges') }}">Challenges</a>
             <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
-            <a href="{{ url_for('household') }}">Household</a>
+            <a href="{{ url_for('community') }}">Community</a>
             <a href="{{ url_for('cookbook') }}">Cookbook</a>
             <a href="{{ url_for('profile') }}">Profile</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
         </div>
     </nav>
 
     <div class="main-container">
-        <h2>📤 Share Your Achievement</h2>
-        <p style="color:#888; margin-top:6px;">
-            Download this card and share it with your family and friends!
-        </p>
 
-        <!-- THE SHARE CARD (this is what gets captured) -->
-        <div id="shareCard" class="share-card-container">
-            <div class="share-card-header">
-                <div class="share-card-logo">🍽️ Hapag</div>
-                <div class="share-card-tagline">Filipino Recipe System</div>
-            </div>
+        <div class="page-header">
+            <h2>📤 Share Your <span>Achievement</span></h2>
+            <p>Download your card or share it directly to the community or your household!</p>
+        </div>
 
-            <div class="share-card-body">
-                <div class="share-card-dish-icon">🍲</div>
-                <h2 class="share-card-recipe-name">{{ recipe_name }}</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
 
-                {% if recipe.category %}
-                <span class="share-card-category">{{ recipe.category }}</span>
-                {% endif %}
+        <div class="share-grid">
 
-                <div class="share-card-stats">
-                    <div class="share-card-stat">
-                        <span class="share-stat-number">{{ cook_count }}</span>
-                        <span class="share-stat-label">Times Cooked</span>
+            <!-- ── CARD COLUMN ── -->
+            <div class="card-column">
+                <div class="section-label">Your Achievement Card</div>
+
+                <!-- THE SHARE CARD -->
+                <div id="shareCard" class="share-card-container">
+
+                    <div class="share-card-header">
+                        <div class="share-card-logo">
+                            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
+                            Hapag
+                        </div>
+                        <div class="share-card-tagline">Filipino Recipe System</div>
                     </div>
-                    <div class="share-card-stat-divider"></div>
-                    <div class="share-card-stat">
-                        <span class="share-stat-number">{{ user.points }}</span>
-                        <span class="share-stat-label">Total Points</span>
-                    </div>
-                    <div class="share-card-stat-divider"></div>
-                    <div class="share-card-stat">
-                        <span class="share-stat-number">{{ user.badges | length }}</span>
-                        <span class="share-stat-label">Badges</span>
-                    </div>
-                </div>
 
-                <div class="share-card-user-info">
-                    <div class="share-card-avatar">
-                        {% if user.profile_picture %}
-                            <img src="{{ user.profile_picture }}"
-                                 style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
-                        {% else %}
-                            👤
+                    <div class="share-card-body">
+                        <div class="share-card-dish-icon">🍲</div>
+                        <h2 class="share-card-recipe-name">{{ recipe_name }}</h2>
+
+                        {% if recipe.category %}
+                            <span class="share-card-category">🏷️ {{ recipe.category }}</span>
                         {% endif %}
+
+                        <div class="share-card-stats">
+                            <div class="share-card-stat">
+                                <span class="share-stat-number">{{ cook_count }}</span>
+                                <span class="share-stat-label">Times Cooked</span>
+                            </div>
+                            <div class="share-card-stat-divider"></div>
+                            <div class="share-card-stat">
+                                <span class="share-stat-number">{{ user.points }}</span>
+                                <span class="share-stat-label">Total Points</span>
+                            </div>
+                            <div class="share-card-stat-divider"></div>
+                            <div class="share-card-stat">
+                                <span class="share-stat-number">{{ user.badges | length }}</span>
+                                <span class="share-stat-label">Badges</span>
+                            </div>
+                        </div>
+
+                        <div class="share-card-user-info">
+                            <div class="share-card-avatar">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture }}" alt="{{ user.username }}">
+                                {% else %}
+                                    👤
+                                {% endif %}
+                            </div>
+                            <div>
+                                <p class="share-card-username">{{ user.username }}</p>
+                                <p class="share-card-level">⚔️ {{ user.level }}</p>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <p class="share-card-username">{{ user.username }}</p>
-                        <p class="share-card-level">{{ user.level }}</p>
+
+                    <div class="share-card-footer">
+                        🍳 Cooking smarter with Hapag
                     </div>
                 </div>
+
+                <button onclick="downloadCard()" class="btn-download">
+                    ⬇️ Download Card
+                </button>
             </div>
 
-            <div class="share-card-footer">
-                🍳 Cooking smarter with Hapag
+            <!-- ── SHARE FORM COLUMN ── -->
+            <div>
+                <div class="section-label">Share to Feed</div>
+
+                <div class="form-panel">
+                    <form method="POST" action="{{ url_for('create_post') }}"
+                          enctype="multipart/form-data" id="shareForm">
+
+                        <input type="hidden" name="share_card_image" id="shareCardImage">
+                        <input type="hidden" name="recipe_name" value="{{ recipe_name }}">
+
+                        <div class="field-group">
+                            <label class="field-label" for="caption">Caption</label>
+                            <textarea name="content" id="caption" rows="3"
+                                      placeholder="Just cooked {{ recipe_name }}! 🍳">Just cooked {{ recipe_name }}! Check out my stats 🍳</textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="share_target">Share To</label>
+                            <select name="share_target" id="share_target">
+                                <option value="community">🌏 Community (Global Feed)</option>
+                                <option value="household">🏠 My Household</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Include Card Image?</label>
+                            <div class="attach-row">
+                                <button type="button" onclick="attachCard()"
+                                        id="attachBtn" class="btn-attach">
+                                    📎 Attach Card
+                                </button>
+                                <button type="button" onclick="removeCard()"
+                                        id="removeBtn" class="btn-attach remove"
+                                        style="display:none;">
+                                    ❌ Remove Card
+                                </button>
+                            </div>
+
+                            <div id="cardPreview" style="display:none;">
+                                <div class="card-preview-wrap">
+                                    <img id="cardPreviewImg" src="" alt="Card preview">
+                                    <div class="card-preview-hint">✅ Card will be included in your post</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-share-submit"
+                                onclick="return prepareShare()">
+                            📤 Share to Feed
+                        </button>
+
+                    </form>
+                </div>
+
+                <a href="{{ url_for('recipe_detail', recipe_name=recipe_name) }}"
+                   class="btn-back">← Back to Recipe</a>
             </div>
-        </div>
 
-        <!-- ACTION BUTTONS -->
-        <div class="recipe-actions" style="margin-top:24px;">
-            <button onclick="downloadCard()" class="btn-cooked">
-                ⬇️ Download Card
-            </button>
-            <a href="{{ url_for('recipe_detail', recipe_name=recipe_name) }}"
-               class="btn-secondary">
-                ← Back to Recipe
-            </a>
         </div>
-
-        <p style="font-size:0.8rem; color:#999; margin-top:12px;">
-            💡 Tip: Screenshot the card above to share directly in group chats!
-        </p>
     </div>
 
     <script>
+        let cardBase64 = null;
+
         function downloadCard() {
             const card = document.getElementById('shareCard');
-            html2canvas(card, {
-                scale: 2,
-                backgroundColor: '#fff8f0',
-                useCORS: true
-            }).then(canvas => {
+            html2canvas(card, { scale: 1, backgroundColor: '#0D1B2A', useCORS: true }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = 'hapag-{{ recipe_name | replace(" ", "-") }}.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             });
+        }
+
+        function attachCard() {
+            const card = document.getElementById('shareCard');
+            html2canvas(card, { scale: 1, backgroundColor: '#0D1B2A', useCORS: true }).then(canvas => {
+                cardBase64 = canvas.toDataURL('image/png');
+                document.getElementById('cardPreviewImg').src = cardBase64;
+                document.getElementById('cardPreview').style.display = 'block';
+                document.getElementById('attachBtn').style.display = 'none';
+                document.getElementById('removeBtn').style.display = 'block';
+            });
+        }
+
+        function removeCard() {
+            cardBase64 = null;
+            document.getElementById('cardPreview').style.display = 'none';
+            document.getElementById('attachBtn').style.display = 'block';
+            document.getElementById('removeBtn').style.display = 'none';
+        }
+
+        function prepareShare() {
+            if (cardBase64) {
+                document.getElementById('shareCardImage').value = cardBase64;
+            }
+            return true;
         }
     </script>
 

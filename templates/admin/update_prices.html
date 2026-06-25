@@ -2,24 +2,345 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Update Ingredient Prices - Hapag</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.3rem; color: var(--gold);
+            display: flex; align-items: center; gap: .4rem;
+        }
+
+        .nav-brand img {
+            width: 32px; height: 32px; object-fit: contain;
+        }
+
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .76rem; font-weight: 700;
+            padding: .35rem .7rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+
+        .nav-links a:hover  { color: var(--cream); background: var(--panel); }
+        .nav-links a.active { color: var(--sky); }
+
+        .nav-links a:nth-last-child(2) {
+            color: var(--jade);
+            border: 1px solid rgba(46,204,113,.3);
+        }
+        .nav-links a:nth-last-child(2):hover { background: rgba(46,204,113,.12); }
+
+        .nav-links a:last-child {
+            color: var(--orange);
+            border: 1px solid rgba(255,107,53,.3);
+        }
+        .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN CONTAINER ── */
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2.2rem 2rem 4rem;
+        }
+
+        .main-container > h2 {
+            font-family: var(--font-display);
+            font-size: 1.7rem;
+            color: var(--cream);
+            margin-bottom: 0.25rem;
+        }
+
+        .recipe-name {
+            color: var(--muted);
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.75rem;
+        }
+
+        .recipe-name i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+
+        /* ── ALERTS ── */
+        .alert {
+            border-radius: 10px;
+            padding: .7rem 1rem;
+            font-size: .82rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            border: 1px solid transparent;
+        }
+        .alert.error, .alert.danger {
+            background: rgba(255,107,53,.12);
+            border-color: rgba(255,107,53,.35);
+            color: var(--orange);
+        }
+        .alert.success {
+            background: rgba(46,204,113,.1);
+            border-color: rgba(46,204,113,.3);
+            color: var(--jade);
+        }
+        .alert.info {
+            background: rgba(56,189,248,.1);
+            border-color: rgba(56,189,248,.3);
+            color: var(--sky);
+        }
+
+        /* ── FORM CARD ── */
+        .form-card {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            margin-top: 24px;
+        }
+
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--sky), var(--purple));
+            border-radius: 14px 14px 0 0;
+        }
+
+        /* ── INGREDIENT ROWS ── */
+        .ingredient-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.2fr;
+            gap: 12px;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(30, 61, 92, 0.4);
+        }
+
+        .ingredient-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .ingredient-name {
+            font-weight: 700;
+            color: var(--cream);
+        }
+
+        .ingredient-quantity {
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .ingredient-row input {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            color: var(--cream);
+            font-weight: 700;
+            font-size: 0.85rem;
+            width: 100%;
+            transition: border-color 0.15s;
+            font-family: var(--font-body);
+        }
+
+        .ingredient-row input:focus {
+            border-color: var(--sky);
+            outline: none;
+        }
+
+        .ingredient-row input::placeholder {
+            color: var(--muted);
+            opacity: 0.6;
+        }
+
+        /* ── FORM FOOTER ── */
+        .form-footer {
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+            padding-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .form-footer .hint {
+            color: var(--muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: auto;
+        }
+
+        .form-footer .hint i {
+            color: var(--gold);
+            margin-right: 0.4rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--sky), var(--purple));
+            color: #fff;
+            border: none;
+            padding: 0.6rem 1.8rem;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+            font-family: var(--font-body);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: scale(0.97);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 0.6rem 1.8rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            font-family: var(--font-body);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary:hover {
+            background: var(--panel);
+            color: var(--cream);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 720px) {
+            .main-container {
+                padding: 1.5rem 1rem 3rem;
+            }
+
+            .form-card {
+                padding: 1.5rem 1rem;
+            }
+
+            .ingredient-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                padding: 0.6rem 0;
+            }
+
+            .ingredient-row .ingredient-name {
+                grid-column: 1 / -1;
+            }
+
+            .ingredient-row input {
+                grid-column: 1 / -1;
+            }
+
+            .form-footer {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-footer .hint {
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+                text-align: center;
+            }
+
+            .btn-primary,
+            .btn-secondary {
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
 
+    <!-- ── NAVBAR ── -->
     <nav class="navbar">
-        <div class="nav-brand">🍽️ Hapag Admin</div>
+        <div class="nav-brand">
+            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
+            Hapag
+        </div>
         <div class="nav-links">
             <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
             <a href="{{ url_for('admin_users') }}">Users</a>
-            <a href="{{ url_for('admin_recipes') }}">Recipes</a>
+            <a href="{{ url_for('admin_recipes') }}" class="active">Recipes</a>
+            <a href="{{ url_for('admin_ai_review') }}">AI Review</a>
+            <a href="{{ url_for('admin_statistics') }}">Statistics</a>
+            <a href="{{ url_for('admin_evidence') }}">Evidence</a>
+            <a href="{{ url_for('dashboard') }}">Back to App</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
     </nav>
 
+    <!-- ── MAIN ── -->
     <div class="main-container">
         <h2>💰 Update Ingredient Prices</h2>
-        <p style="color:#888; margin-bottom:8px;">{{ recipe.name }}</p>
+        <div class="recipe-name">
+            <i class="fas fa-utensils"></i> {{ recipe.name }}
+        </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category, message in messages %}
@@ -27,24 +348,29 @@
             {% endfor %}
         {% endwith %}
 
-        <div class="form-card" style="max-width: 600px; margin-top: 24px;">
+        <div class="form-card">
             <form method="POST">
-
                 {% for ingredient in recipe.ingredients %}
-                <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px; align-items:center; margin-bottom:12px;">
-                    <span>{{ ingredient.name }}</span>
-                    <span style="color:#888; font-size:0.9rem;">{{ ingredient.quantity }}</span>
-                    <input type="text" name="ingredient_price" value="{{ ingredient.estimated_price }}"
-                           style="margin-bottom:0;">
+                <div class="ingredient-row">
+                    <span class="ingredient-name">{{ ingredient.name }}</span>
+                    <span class="ingredient-quantity">{{ ingredient.quantity }}</span>
+                    <input type="text" 
+                           name="ingredient_price" 
+                           value="{{ ingredient.estimated_price }}" 
+                           placeholder="₱0.00">
                 </div>
                 {% endfor %}
 
-                <div style="border-top:1px solid #eee; margin-top:16px; padding-top:16px;">
-                    <p style="color:#888; font-size:0.85rem; margin-bottom:16px;">
-                        💡 Total cost will be automatically recalculated based on the prices above.
-                    </p>
-                    <button type="submit">💾 Update Prices</button>
-                    <a href="{{ url_for('admin_recipes') }}" class="btn-secondary">Cancel</a>
+                <div class="form-footer">
+                    <span class="hint">
+                        <i class="fas fa-lightbulb"></i> Total cost will be automatically recalculated
+                    </span>
+                    <a href="{{ url_for('admin_recipes') }}" class="btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Update Prices
+                    </button>
                 </div>
             </form>
         </div>
