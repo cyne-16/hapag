@@ -1,2 +1,7 @@
-templates/* linguist-vendored
-static/* linguist-vendored
+# Mark HTML templates as linguist-vendored to exclude them from stats
+*.html linguist-vendored
+*.css linguist-vendored
+*.js linguist-vendored
+
+# Or mark them as a different language
+*.html linguist-language=Python
