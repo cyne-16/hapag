@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Hapag</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
         /* ── TOKENS ───────────────────────────────────────────── */
         :root {
@@ -23,7 +24,6 @@
             --font-body:    'Nunito', sans-serif;
         }
 
-        /* ── RESET ────────────────────────────────────────────── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
@@ -34,7 +34,6 @@
             overflow-x: hidden;
         }
 
-        /* subtle star-field texture */
         body::before {
             content: '';
             position: fixed;
@@ -108,6 +107,153 @@
             background: rgba(255,107,53,.12);
         }
 
+        /* ── NOTIFICATION BELL ────────────────────────────────── */
+        .notif-wrap { position: relative; }
+
+        .notif-bell {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 1.05rem;
+            padding: .4rem .5rem;
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            transition: color .2s, background .2s;
+        }
+
+        .notif-bell:hover {
+            color: var(--cream);
+            background: var(--panel);
+        }
+
+        .notif-badge {
+            position: absolute;
+            top: 2px; right: 2px;
+            background: var(--orange);
+            color: #fff;
+            font-size: .58rem;
+            font-weight: 800;
+            border-radius: 50%;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--night);
+        }
+
+        .notif-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 340px;
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            z-index: 300;
+            display: none;
+            box-shadow: 0 8px 32px rgba(0,0,0,.5);
+        }
+
+        .notif-dropdown.open { display: block; }
+
+        .notif-header {
+            padding: .8rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .notif-header span {
+            font-family: var(--font-display);
+            font-size: .95rem;
+            color: var(--cream);
+        }
+
+        .notif-header button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--sky);
+            font-size: .72rem;
+            font-weight: 700;
+            font-family: var(--font-body);
+        }
+
+        .notif-header button:hover { text-decoration: underline; }
+
+        .notif-list { max-height: 360px; overflow-y: auto; }
+
+        .notif-item {
+            display: flex;
+            gap: .75rem;
+            padding: .85rem 1rem;
+            border-bottom: 1px solid var(--border);
+            transition: background .15s;
+            align-items: flex-start;
+        }
+
+        .notif-item.unread { background: rgba(56,189,248,.06); }
+        .notif-item:hover  { background: rgba(255,255,255,.04); }
+
+        .notif-icon {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .9rem;
+        }
+
+        .notif-icon.approve { background: rgba(46,204,113,.15); }
+        .notif-icon.reject  { background: rgba(255,107,53,.15); }
+
+        .notif-body { flex: 1; min-width: 0; }
+
+        .notif-title {
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--cream);
+            line-height: 1.3;
+        }
+
+        .notif-sub {
+            font-size: .74rem;
+            color: var(--jade);
+            margin-top: 2px;
+        }
+
+        .notif-sub.rejected { color: var(--orange); }
+
+        .notif-time {
+            font-size: .68rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .unread-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--sky);
+            flex-shrink: 0;
+            margin-top: 6px;
+        }
+
+        .notif-empty {
+            padding: 2.5rem 1rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: .85rem;
+            font-weight: 700;
+        }
+
         /* ── MAIN ─────────────────────────────────────────────── */
         .main-container {
             position: relative;
@@ -117,7 +263,6 @@
             padding: 2.5rem 2rem 4rem;
         }
 
-        /* ── WELCOME HERO ─────────────────────────────────────── */
         .welcome-hero {
             display: flex;
             align-items: flex-end;
@@ -134,10 +279,7 @@
             line-height: 1.1;
         }
 
-        .welcome-text h2 span {
-            color: var(--gold);
-            text-shadow: 0 0 20px rgba(245,166,35,.45);
-        }
+        .welcome-text h2 span { color: var(--gold); text-shadow: 0 0 20px rgba(245,166,35,.45); }
 
         .welcome-text p {
             color: var(--muted);
@@ -146,7 +288,6 @@
             font-weight: 600;
         }
 
-        /* XP bar widget */
         .xp-widget {
             background: var(--panel);
             border: 1px solid var(--border);
@@ -162,17 +303,8 @@
             margin-bottom: .6rem;
         }
 
-        .xp-level {
-            font-family: var(--font-display);
-            font-size: 1rem;
-            color: var(--jade);
-        }
-
-        .xp-points {
-            font-size: .78rem;
-            font-weight: 700;
-            color: var(--gold);
-        }
+        .xp-level { font-family: var(--font-display); font-size: 1rem; color: var(--jade); }
+        .xp-points { font-size: .78rem; font-weight: 700; color: var(--gold); }
 
         .xp-bar-track {
             background: var(--border);
@@ -183,10 +315,8 @@
 
         .xp-bar-fill {
             height: 100%;
-            width: 68%;
             background: linear-gradient(90deg, var(--jade), #00ff9d);
             border-radius: 99px;
-            position: relative;
             animation: xpPulse 2.5s ease-in-out infinite;
         }
 
@@ -202,7 +332,6 @@
             text-align: right;
         }
 
-        /* streak badge */
         .streak-badge {
             display: inline-flex;
             align-items: center;
@@ -217,7 +346,6 @@
             margin-top: .7rem;
         }
 
-        /* ── SECTION LABEL ────────────────────────────────────── */
         .section-label {
             font-size: .7rem;
             font-weight: 800;
@@ -237,14 +365,12 @@
             background: var(--border);
         }
 
-        /* ── CARD GRID ────────────────────────────────────────── */
         .dashboard-cards {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 1rem;
         }
 
-        /* ── CARD ─────────────────────────────────────────────── */
         .card {
             background: var(--deep);
             border: 1px solid var(--border);
@@ -256,7 +382,6 @@
             transition: transform .22s ease, border-color .22s, box-shadow .22s;
         }
 
-        /* colored top accent bar — unique per card */
         .card::before {
             content: '';
             position: absolute;
@@ -266,14 +391,12 @@
             background: var(--card-accent, var(--gold));
         }
 
-        /* hover glow */
         .card:hover {
             transform: translateY(-4px);
             border-color: var(--card-accent, var(--gold));
             box-shadow: 0 8px 32px rgba(0,0,0,.35), 0 0 0 1px var(--card-accent, var(--gold)), inset 0 0 40px rgba(0,0,0,.15);
         }
 
-        /* shimmer sweep on hover */
         .card::after {
             content: '';
             position: absolute;
@@ -283,33 +406,12 @@
             transition: transform .4s ease;
         }
 
-        .card:hover::after {
-            transform: translateX(100%);
-        }
+        .card:hover::after { transform: translateX(100%); }
 
-        .card-icon {
-            font-size: 2rem;
-            margin-bottom: .7rem;
-            display: block;
-            filter: drop-shadow(0 2px 6px rgba(0,0,0,.4));
-        }
+        .card-icon { font-size: 2rem; margin-bottom: .7rem; display: block; filter: drop-shadow(0 2px 6px rgba(0,0,0,.4)); }
+        .card h3   { font-family: var(--font-display); font-size: 1.05rem; color: var(--cream); margin-bottom: .3rem; line-height: 1.2; }
+        .card p    { font-size: .78rem; color: var(--muted); font-weight: 600; line-height: 1.4; }
 
-        .card h3 {
-            font-family: var(--font-display);
-            font-size: 1.05rem;
-            color: var(--cream);
-            margin-bottom: .3rem;
-            line-height: 1.2;
-        }
-
-        .card p {
-            font-size: .78rem;
-            color: var(--muted);
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        /* pill tag on featured cards */
         .card-tag {
             display: inline-block;
             font-size: .65rem;
@@ -323,23 +425,20 @@
             margin-bottom: .5rem;
         }
 
-        /* ── ACCENT ASSIGNMENTS ───────────────────────────────── */
-        .card:nth-child(1)  { --card-accent: #F5A623; } /* gold   – recipes    */
-        .card:nth-child(2)  { --card-accent: #38BDF8; } /* sky    – profile    */
-        .card:nth-child(3)  { --card-accent: #FF6B35; } /* orange – favorites  */
-        .card:nth-child(4)  { --card-accent: #A855F7; } /* purple – history    */
-        .card:nth-child(5)  { --card-accent: #2ECC71; } /* jade   – challenges */
-        .card:nth-child(6)  { --card-accent: #F5A623; } /* gold   – leaderboard*/
-        .card:nth-child(7)  { --card-accent: #FF6B35; } /* orange – cookbook   */
-        .card:nth-child(8)  { --card-accent: #38BDF8; } /* sky    – household  */
-        .card:nth-child(9)  { --card-accent: #2ECC71; } /* jade   – community  */
+        .card:nth-child(1) { --card-accent: #F5A623; }
+        .card:nth-child(2) { --card-accent: #38BDF8; }
+        .card:nth-child(3) { --card-accent: #FF6B35; }
+        .card:nth-child(4) { --card-accent: #A855F7; }
+        .card:nth-child(5) { --card-accent: #2ECC71; }
+        .card:nth-child(6) { --card-accent: #F5A623; }
+        .card:nth-child(7) { --card-accent: #38BDF8; }
 
-        /* ── RESPONSIVE ───────────────────────────────────────── */
         @media (max-width: 640px) {
             .navbar { padding: 0 1rem; }
             .nav-links a { font-size: .68rem; padding: .3rem .5rem; }
             .main-container { padding: 1.5rem 1rem 3rem; }
             .dashboard-cards { grid-template-columns: 1fr 1fr; }
+            .notif-dropdown { width: 300px; right: -60px; }
         }
     </style>
 </head>
@@ -347,12 +446,13 @@
 
     <!-- NAVBAR -->
     <nav class="navbar">
-       <div class="nav-brand">
-    <img src="{{ url_for('static', filename='images/icon.png') }}"
-         alt="Hapag"
-         style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;">
-    Hapag
-</div>
+        <div class="nav-brand">
+            <img src="{{ url_for('static', filename='images/icon.png') }}"
+                 alt="Hapag"
+                 style="width:32px;height:32px;object-fit:contain;vertical-align:middle;">
+            Hapag
+        </div>
+
         <div class="nav-links">
             <a href="{{ url_for('dashboard') }}">Home</a>
             <a href="{{ url_for('recommend') }}">Recipes</a>
@@ -361,6 +461,25 @@
             <a href="{{ url_for('community') }}">Community</a>
             <a href="{{ url_for('cookbook') }}">Cookbook</a>
             <a href="{{ url_for('profile') }}">Profile</a>
+
+            <!-- NOTIFICATION BELL -->
+            <div class="notif-wrap">
+                <button class="notif-bell" id="notifBtn" aria-label="Notifications" onclick="toggleNotif(event)">
+                    <i class="fas fa-bell"></i>
+                    <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                </button>
+
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div class="notif-header">
+                        <span>🔔 Notifications</span>
+                        <button onclick="markAllRead()">Mark all read</button>
+                    </div>
+                    <div class="notif-list" id="notifList">
+                        <div class="notif-empty">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
             <a href="{{ url_for('logout') }}" class="logout">Logout</a>
         </div>
     </nav>
@@ -373,105 +492,169 @@
                 <h2>Welcome back, {{ user.username }}!</h2>
                 <p>Ready for today's cooking quest?</p>
                 {% if streak > 0 %}
-<div class="streak-badge">
-    <i class="fas fa-fire" style="color: var(--orange);"></i>
-    {{ streak }}-day streak — keep it going!
-</div>
-{% endif %}
+                <div class="streak-badge">
+                    <i class="fas fa-fire" style="color:var(--orange);"></i>
+                    {{ streak }}-day streak — keep it going!
+                </div>
+                {% endif %}
             </div>
 
             <div class="xp-widget">
-    <div class="xp-top">
-        <span class="xp-level">🏅 {{ user.level }}</span>
-        <span class="xp-points">{{ user.points }} XP</span>
-    </div>
-
-    <div class="xp-bar-track">
-        {% if user.points < 100 %}
-            <div class="xp-bar-fill"
-                 style="width: {{ (user.points / 100 * 100) | int }}%;">
+                <div class="xp-top">
+                    <span class="xp-level">🏅 {{ user.level }}</span>
+                    <span class="xp-points">{{ user.points }} XP</span>
+                </div>
+                <div class="xp-bar-track">
+                    {% if user.points < 100 %}
+                        <div class="xp-bar-fill" style="width:{{ (user.points / 100 * 100) | int }}%;"></div>
+                    {% elif user.points < 300 %}
+                        <div class="xp-bar-fill" style="width:{{ ((user.points - 100) / 200 * 100) | int }}%;"></div>
+                    {% elif user.points < 600 %}
+                        <div class="xp-bar-fill" style="width:{{ ((user.points - 300) / 300 * 100) | int }}%;"></div>
+                    {% else %}
+                        <div class="xp-bar-fill" style="width:100%;"></div>
+                    {% endif %}
+                </div>
+                <div class="xp-label">
+                    {% if user.points < 100 %}
+                        {{ user.points }} / 100 pts to reach Home Cook
+                    {% elif user.points < 300 %}
+                        {{ user.points }} / 300 pts to reach Skilled Cook
+                    {% elif user.points < 600 %}
+                        {{ user.points }} / 600 pts to reach Master Chef
+                    {% else %}
+                        🎉 You have reached the highest level: Master Chef!
+                    {% endif %}
+                </div>
             </div>
-
-        {% elif user.points < 300 %}
-            <div class="xp-bar-fill"
-                 style="width: {{ ((user.points - 100) / 200 * 100) | int }}%;">
-            </div>
-
-        {% elif user.points < 600 %}
-            <div class="xp-bar-fill"
-                 style="width: {{ ((user.points - 300) / 300 * 100) | int }}%;">
-            </div>
-
-        {% else %}
-            <div class="xp-bar-fill" style="width: 100%;"></div>
-        {% endif %}
-    </div>
-
-    <div class="xp-label">
-        {% if user.points < 100 %}
-            {{ user.points }} / 100 pts to reach Home Cook
-        {% elif user.points < 300 %}
-            {{ user.points }} / 300 pts to reach Skilled Cook
-        {% elif user.points < 600 %}
-            {{ user.points }} / 600 pts to reach Master Chef
-        {% else %}
-            🎉 You have reached the highest level: Master Chef!
-        {% endif %}
-    </div>
-</div>
         </div>
 
         <!-- CARDS -->
         <div class="section-label">Your Kitchen Hub</div>
 
         <div class="dashboard-cards">
-
             <div class="card" onclick="window.location='{{ url_for('recommend') }}'">
-                <span class="card-tag"> Suggested</span>
-                <div class="card-icon"></div>
+                <span class="card-tag">Suggested</span>
+                <div class="card-icon">🍳</div>
                 <h3>Get Recipe Recommendations</h3>
                 <p>Enter your budget and preference</p>
             </div>
 
             <div class="card" onclick="window.location='{{ url_for('profile') }}'">
-                <div class="card-icon"></div>
+                <div class="card-icon">👤</div>
                 <h3>My Profile</h3>
                 <p>Points, badges, and achievements</p>
             </div>
 
             <div class="card" onclick="window.location='{{ url_for('challenges') }}'">
                 <span class="card-tag">🎯 Active</span>
-                <div class="card-icon"></div>
+                <div class="card-icon">🏆</div>
                 <h3>Weekly Challenges</h3>
                 <p>Complete challenges for bonus points</p>
             </div>
 
             <div class="card" onclick="window.location='{{ url_for('leaderboard') }}'">
-                <div class="card-icon"></div>
+                <div class="card-icon">📊</div>
                 <h3>Leaderboard</h3>
                 <p>See how you rank against other cooks</p>
             </div>
 
-            <div class="card"   onclick="window.location='{{ url_for('cookbook') }}'">
-                <div class="card-icon"></div>
+            <div class="card" onclick="window.location='{{ url_for('cookbook') }}'">
+                <div class="card-icon">📖</div>
                 <h3>My Cookbook</h3>
                 <p>Collect every Filipino dish you've cooked</p>
             </div>
 
             <div class="card" onclick="window.location='{{ url_for('households_directory') }}'">
-                <div class="card-icon"></div>
+                <div class="card-icon">🏠</div>
                 <h3>Households</h3>
                 <p>Cook and compete with your family</p>
             </div>
 
             <div class="card" onclick="window.location='{{ url_for('community') }}'">
-                <div class="card-icon"></div>
+                <div class="card-icon">🌏</div>
                 <h3>Community</h3>
                 <p>See what Filipino households are cooking</p>
             </div>
-
         </div>
     </div>
+
+    <script>
+        function toggleNotif(e) {
+            e.stopPropagation();
+            const dd = document.getElementById('notifDropdown');
+            const isOpen = dd.classList.contains('open');
+            dd.classList.toggle('open');
+            if (!isOpen) loadNotifications();
+        }
+
+        document.addEventListener('click', () => {
+            document.getElementById('notifDropdown').classList.remove('open');
+        });
+
+        document.getElementById('notifDropdown').addEventListener('click', e => e.stopPropagation());
+
+        function loadNotifications() {
+            fetch('/notifications')
+                .then(r => r.json())
+                .then(data => {
+                    const badge = document.getElementById('notifBadge');
+                    const list  = document.getElementById('notifList');
+
+                    badge.textContent = data.unread_count;
+                    badge.style.display = data.unread_count > 0 ? 'flex' : 'none';
+
+                    if (!data.notifications.length) {
+                        list.innerHTML = '<div class="notif-empty">🎉 You\'re all caught up!</div>';
+                        return;
+                    }
+
+                    list.innerHTML = data.notifications.map(n => {
+                        const isApprove = n.type === 'evidence_approved';
+                        return `
+                        <div class="notif-item ${n.read ? '' : 'unread'}">
+                            <div class="notif-icon ${isApprove ? 'approve' : 'reject'}">
+                                ${isApprove ? '✅' : '❌'}
+                            </div>
+                            <div class="notif-body">
+                                <div class="notif-title">${n.title}</div>
+                                <div class="notif-sub ${isApprove ? '' : 'rejected'}">${n.body}</div>
+                                <div class="notif-time">
+                                    <i class="fas fa-clock" style="font-size:.6rem"></i> ${n.time_ago}
+                                </div>
+                            </div>
+                            ${!n.read ? '<div class="unread-dot"></div>' : ''}
+                        </div>`;
+                    }).join('');
+                });
+        }
+
+        function markAllRead() {
+            fetch('/notifications/mark-read', { method: 'POST' })
+                .then(() => {
+                    document.querySelectorAll('.notif-item.unread').forEach(el => {
+                        el.classList.remove('unread');
+                        const dot = el.querySelector('.unread-dot');
+                        if (dot) dot.remove();
+                    });
+                    document.getElementById('notifBadge').style.display = 'none';
+                });
+        }
+
+        // Poll every 60s for new notifications
+        setInterval(() => {
+            fetch('/notifications')
+                .then(r => r.json())
+                .then(data => {
+                    const badge = document.getElementById('notifBadge');
+                    badge.textContent = data.unread_count;
+                    badge.style.display = data.unread_count > 0 ? 'flex' : 'none';
+                });
+        }, 60000);
+
+        // Load badge count on page load
+        loadNotifications();
+    </script>
 
 </body>
 </html>

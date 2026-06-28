@@ -485,15 +485,18 @@
                 </div>
 
                 <!-- RECIPE ICON -->
-                <div class="cookbook-card-icon">
-                    {% if not item.can_access %}
-                        🔒
-                    {% elif item.is_cooked %}
-                        ✅
-                    {% else %}
-                        🍲
-                    {% endif %}
-                </div>
+                <!-- RECIPE IMAGE OR ICON -->
+{% if item.can_access and item.card_image %}
+    <img src="{{ item.card_image }}" alt="{{ item.name }}"
+         style="width:100%; height:100px; object-fit:cover;
+                border-radius:8px; margin:28px 0 8px;">
+{% else %}
+    <div class="cookbook-card-icon">
+        {% if not item.can_access %}🔒
+        {% elif item.is_cooked %}✅
+        {% else %}🍲{% endif %}
+    </div>
+{% endif %}
 
                 <!-- RECIPE NAME -->
                 <h4 class="cookbook-card-name">

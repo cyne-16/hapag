@@ -3,7 +3,10 @@ from app import app, db
 from flask_login import login_user, logout_user, login_required, current_user, UserMixin
 from flask_bcrypt import Bcrypt
 from bson.objectid import ObjectId
-
+from flask import (
+    Flask, render_template, request, redirect,
+    url_for, flash, session, jsonify
+)
 bcrypt = Bcrypt(app)
 
 # ─────────────────────────────────────────────
@@ -28,6 +31,58 @@ def load_user(user_id):
     user_data = db.users.find_one({"_id": ObjectId(user_id)})
     if user_data:
         return User(user_data)
+    return None
+
+import requests as http_requests
+
+def get_recipe_image(recipe_name, category=""):
+    """
+    Fetches a food image from Unsplash for a given recipe name.
+    Caches the result in MongoDB to avoid repeated API calls.
+    Returns an image URL string or a fallback emoji placeholder.
+    """
+    # Check cache first
+    cache_key = recipe_name.lower().strip()
+    cached = db.recipe_image_cache.find_one({"recipe_name": cache_key})
+    if cached:
+        return cached["image_url"]
+
+    # Build search query
+    search_query = f"{recipe_name} Filipino food"
+
+    try:
+        access_key = os.getenv("UNSPLASH_ACCESS_KEY")
+        response = http_requests.get(
+            "https://api.unsplash.com/search/photos",
+            params={
+                "query": search_query,
+                "per_page": 1,
+                "orientation": "landscape",
+                "content_filter": "high"
+            },
+            headers={"Authorization": f"Client-ID {access_key}"},
+            timeout=5
+        )
+
+        data = response.json()
+        results = data.get("results", [])
+
+        if results:
+            image_url = results[0]["urls"]["regular"]
+
+            # Cache the result
+            db.recipe_image_cache.insert_one({
+                "recipe_name": cache_key,
+                "image_url": image_url,
+                "cached_at": datetime.now()
+            })
+
+            return image_url
+
+    except Exception as e:
+        print(f"Image fetch error for {recipe_name}: {e}")
+
+    # Fallback — return None, template will show emoji placeholder
     return None
 
 # ─────────────────────────────────────────────
@@ -700,6 +755,9 @@ Respond ONLY in JSON, no extra text:
         all_recipes,
         key=lambda r: (-r["_within_budget"], -r["_relevance"], r["_cost_value"])
     )
+# Fetch images for each recipe card
+    for r in all_recipes:
+        r["card_image"] = get_recipe_image(r.get("name", ""), r.get("category", ""))
 
     # Store full recipe data so recipe_detail can reuse it instead of regenerating
     session["last_search_recipes"] = all_recipes
@@ -851,14 +909,19 @@ Respond ONLY in this exact JSON format, no extra text:
         "status": "pending"
     })
 
+    # Fetch recipe image
+    recipe_image = get_recipe_image(
+        recipe.get("name", recipe_name),
+        recipe.get("category", "")
+    )
+
     return render_template("recipe_detail.html",
                            recipe=recipe,
                            source=source,
                            recipe_name=recipe_name,
                            household_size=household_size,
-                           mystery_bonus=mystery_bonus,
-                           pending_submission=pending_submission,
-                           already_cooked_today=False)
+                           mystery_bonus=session.pop("mystery_bonus", None),
+                           recipe_image=recipe_image)
 # ─────────────────────────────────────────────
 # MARK RECIPE AS COOKED
 # ─────────────────────────────────────────────
@@ -1754,10 +1817,16 @@ def cookbook():
         else:
             lock_reason = "none"
 
+        # Fetch image (only for accessible recipes to save API calls)
+        card_image = None
+        if can_access:
+            card_image = get_recipe_image(recipe["name"], recipe.get("category", ""))
+
         collection.append({
             "id": recipe_id,
             "name": recipe["name"],
             "category": recipe.get("category", "Other"),
+            "card_image": card_image,
             "estimated_cost": recipe.get("estimated_total_cost", "₱0"),
             "tier": tier,
             "can_access": can_access,
@@ -2223,6 +2292,7 @@ def view_comments(post_id):
         "id": post_id,
         "content": post.get("content", ""),
         "recipe_name": post.get("recipe_name", ""),
+        "image": post.get("image", None),
         "created_at": post.get("created_at").strftime("%b %d, %Y %I:%M %p") if post.get("created_at") else "",
         "likes": len(post.get("likes", [])),
         "liked_by_me": liked_by_me,
@@ -2616,6 +2686,23 @@ def admin_approve_evidence(submission_id):
                 "share_target": share_target
             })
 
+        # ── INSERT NOTIFICATION ──────────────────────────────
+        level_up_msg = ""
+        if new_level != user_data.get("level", "Beginner Cook"):
+            level_up_msg = f" · New level: {new_level} 🏅"
+
+        bonus_msg = f" · Mystery bonus +{bonus_amount} pts!" if bonus_amount > 0 else ""
+
+        db.notifications.insert_one({
+            "user_id": str(user_data["_id"]),
+            "username": submission["username"],
+            "type": "evidence_approved",
+            "title": f"Evidence approved — {recipe_name}",
+            "body": f"+{total_points_earned} pts awarded{bonus_msg}{level_up_msg}",
+            "read": False,
+            "created_at": datetime.now()
+        })
+
     flash(f"✅ Evidence approved! Points awarded to {submission['username']}.", "success")
     return redirect(url_for("admin_evidence"))
 
@@ -2634,6 +2721,19 @@ def admin_reject_evidence(submission_id):
         {"_id": ObjectId(submission_id)},
         {"$set": {"status": "rejected", "reviewed_at": datetime.now()}}
     )
+
+    # ── INSERT NOTIFICATION ──────────────────────────────
+    rejected_user = db.users.find_one({"username": submission["username"]})
+    if rejected_user:
+        db.notifications.insert_one({
+            "user_id": str(rejected_user["_id"]),
+            "username": submission["username"],
+            "type": "evidence_rejected",
+            "title": f"Evidence rejected — {submission['recipe_name']}",
+            "body": "Your photo was unclear or invalid. Please resubmit.",
+            "read": False,
+            "created_at": datetime.now()
+        })
 
     flash(f"❌ Evidence rejected for {submission['username']}.", "success")
     return redirect(url_for("admin_evidence"))
@@ -2710,3 +2810,37 @@ def unlock_recipe(recipe_id):
 
 from datetime import datetime, timedelta
 
+@app.route("/notifications")
+@login_required
+def get_notifications():
+    notifs = list(db.notifications.find(
+        {"user_id": str(current_user.id)}
+    ).sort("created_at", -1).limit(20))
+    
+    for n in notifs:
+        n["_id"] = str(n["_id"])
+        n["time_ago"] = format_time_ago(n["created_at"])  # helper below
+    
+    unread_count = db.notifications.count_documents({
+        "user_id": str(current_user.id), "read": False
+    })
+    return jsonify({"notifications": notifs, "unread_count": unread_count})
+
+
+@app.route("/notifications/mark-read", methods=["POST"])
+@login_required
+def mark_notifications_read():
+    db.notifications.update_many(
+        {"user_id": str(current_user.id), "read": False},
+        {"$set": {"read": True}}
+    )
+    return jsonify({"ok": True})
+
+
+def format_time_ago(dt):
+    diff = datetime.now() - dt
+    s = int(diff.total_seconds())
+    if s < 60:      return "just now"
+    if s < 3600:    return f"{s // 60}m ago"
+    if s < 86400:   return f"{s // 3600}h ago"
+    return f"{s // 86400}d ago"

@@ -2,14 +2,294 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Post - Hapag Community</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --night:   #0D1B2A;
+            --deep:    #112236;
+            --panel:   #162d47;
+            --border:  #1e3d5c;
+            --gold:    #F5A623;
+            --orange:  #FF6B35;
+            --jade:    #2ECC71;
+            --sky:     #38BDF8;
+            --purple:  #A855F7;
+            --cream:   #FFF8EE;
+            --muted:   #8FAABB;
+            --font-display: 'Fredoka One', cursive;
+            --font-body:    'Nunito', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--night);
+            color: var(--cream);
+            font-family: var(--font-body);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(13,27,42,.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2rem; height: 60px;
+        }
+        .nav-brand {
+            font-family: var(--font-display);
+            font-size: 1.3rem; color: var(--gold);
+            display: flex; align-items: center; gap: .4rem;
+        }
+        .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: .76rem; font-weight: 700;
+            padding: .35rem .7rem; border-radius: 6px;
+            transition: color .2s, background .2s;
+            letter-spacing: .02em; text-transform: uppercase;
+        }
+        .nav-links a:hover { color: var(--cream); background: var(--panel); }
+        .nav-links a.active { color: var(--sky); }
+        .nav-links a.logout {
+            color: var(--orange); border: 1px solid rgba(255,107,53,.3);
+        }
+        .nav-links a.logout:hover { background: rgba(255,107,53,.12); }
+
+        /* ── MAIN ── */
+        .main-container {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 2.2rem 2rem 4rem;
+        }
+
+        /* ── BACK LINK ── */
+        .back-link {
+            display: inline-flex; align-items: center; gap: .3rem;
+            color: var(--sky); text-decoration: none;
+            font-size: .82rem; font-weight: 700;
+            transition: opacity .18s;
+        }
+        .back-link:hover { opacity: .75; }
+
+        /* ── POST CARD ── */
+        .post-card {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.4rem;
+            position: relative; overflow: hidden;
+            margin-top: 16px;
+        }
+        .post-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--orange), var(--gold));
+            border-radius: 14px 14px 0 0;
+        }
+
+        /* ── AUTHOR ROW ── */
+        .author-row {
+            display: flex; align-items: center; gap: .75rem;
+            margin-bottom: 1rem;
+        }
+        .avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border);
+            flex-shrink: 0;
+        }
+        .avatar-placeholder {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: var(--panel);
+            border: 2px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; flex-shrink: 0;
+        }
+        .author-info { flex: 1; }
+        .author-info strong {
+            display: block;
+            font-size: .9rem; font-weight: 800; color: var(--cream);
+        }
+        .author-level {
+            font-size: .72rem; font-weight: 700; color: var(--gold);
+        }
+        .post-time {
+            font-size: .72rem; color: var(--muted); font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* ── POST CONTENT ── */
+        .post-content {
+            font-size: .92rem; font-weight: 600;
+            color: var(--cream); line-height: 1.65;
+            margin-bottom: 1rem;
+        }
+
+        /* ── RECIPE LINK ── */
+        .recipe-pill {
+            display: inline-flex; align-items: center; gap: .35rem;
+            background: rgba(245,166,35,.1);
+            border: 1px solid rgba(245,166,35,.3);
+            color: var(--gold);
+            font-size: .78rem; font-weight: 800;
+            padding: .3rem .8rem;
+            border-radius: 20px;
+            text-decoration: none;
+            transition: background .18s;
+            margin-bottom: 1rem;
+        }
+        .recipe-pill:hover { background: rgba(245,166,35,.18); }
+
+        /* ── POST ACTIONS ── */
+        .post-actions {
+            display: flex; align-items: center; gap: .6rem;
+            padding-top: .9rem;
+            border-top: 1px solid var(--border);
+        }
+        .action-btn {
+            display: inline-flex; align-items: center; gap: .3rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-family: var(--font-body);
+            font-size: .78rem; font-weight: 800;
+            padding: .35rem .8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: color .18s, border-color .18s, background .18s;
+        }
+        .action-btn:hover { color: var(--cream); border-color: var(--muted); }
+        .action-btn.liked {
+            color: #f87171;
+            border-color: rgba(248,113,113,.4);
+            background: rgba(248,113,113,.08);
+        }
+        .action-btn.delete-btn {
+            color: var(--orange);
+            border-color: rgba(255,107,53,.3);
+            background: rgba(255,107,53,.08);
+        }
+        .action-btn.delete-btn:hover { background: rgba(255,107,53,.15); }
+
+        /* ── COMMENTS SECTION ── */
+        .comments-section {
+            background: var(--deep);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.4rem;
+            position: relative; overflow: hidden;
+            margin-top: 20px;
+        }
+        .comments-section::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--sky), var(--purple));
+            border-radius: 14px 14px 0 0;
+        }
+        .comments-section h3 {
+            font-family: var(--font-display);
+            font-size: 1.05rem; color: var(--cream);
+        }
+
+        /* ── COMMENT CARD ── */
+        .comment-list { display: flex; flex-direction: column; gap: .75rem; margin-top: 1rem; }
+
+        .comment-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: .9rem 1rem;
+        }
+        .comment-author {
+            display: flex; align-items: center; gap: .5rem;
+            margin-bottom: .5rem;
+        }
+        .comment-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;
+        }
+        .comment-avatar-placeholder {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: var(--deep); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: .85rem; flex-shrink: 0;
+        }
+        .comment-author strong {
+            font-size: .82rem; font-weight: 800; color: var(--cream); flex: 1;
+        }
+        .comment-time {
+            font-size: .7rem; color: var(--muted); font-weight: 600;
+        }
+        .comment-content {
+            font-size: .85rem; font-weight: 600;
+            color: var(--cream); line-height: 1.55;
+        }
+        .comment-delete {
+            margin-top: .5rem;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-comments {
+            text-align: center; padding: 1.5rem 0;
+            color: var(--muted); font-size: .85rem; font-weight: 700;
+        }
+
+        /* ── COMMENT FORM ── */
+        .comment-form { margin-top: 1.2rem; }
+        .comment-form textarea {
+            width: 100%;
+            background: var(--panel);
+            color: var(--cream);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: .7rem .9rem;
+            font-family: var(--font-body);
+            font-size: .88rem; font-weight: 600;
+            resize: none; line-height: 1.5;
+            transition: border-color .18s;
+            margin-bottom: .6rem;
+        }
+        .comment-form textarea::placeholder { color: var(--muted); opacity: .7; }
+        .comment-form textarea:focus {
+            outline: none; border-color: var(--sky);
+            box-shadow: 0 0 0 3px rgba(56,189,248,.12);
+        }
+        .btn-comment {
+            display: inline-flex; align-items: center; gap: .35rem;
+            background: linear-gradient(135deg, var(--sky), var(--purple));
+            color: #fff;
+            font-family: var(--font-body);
+            font-size: .82rem; font-weight: 800;
+            padding: .5rem 1.2rem;
+            border: none; border-radius: 8px;
+            cursor: pointer;
+            transition: opacity .18s, transform .18s;
+        }
+        .btn-comment:hover { opacity: .88; transform: translateY(-1px); }
+
+        /* ── DIVIDER ── */
+        .comment-divider {
+            border: none; border-top: 1px solid var(--border);
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 720px) {
+            .main-container { padding: 1.5rem 1rem 3rem; }
+        }
+    </style>
 </head>
 <body>
 
-     <nav class="navbar">
+    <nav class="navbar">
         <div class="nav-brand">
-            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
+            <img src="{{ url_for('static', filename='images/icon.png') }}"
+                 alt="Hapag"
+                 style="width:32px; height:32px; object-fit:contain; vertical-align:middle;">
             Hapag
         </div>
         <div class="nav-links">
@@ -17,51 +297,51 @@
             <a href="{{ url_for('recommend') }}">Recipes</a>
             <a href="{{ url_for('challenges') }}">Challenges</a>
             <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
-            <a href="{{ url_for('community') }}">Community</a>
+            <a href="{{ url_for('community') }}" class="active">Community</a>
             <a href="{{ url_for('cookbook') }}">Cookbook</a>
             <a href="{{ url_for('profile') }}">Profile</a>
             <a href="{{ url_for('logout') }}" class="logout">Logout</a>
         </div>
     </nav>
 
-    <div class="main-container" style="max-width:680px;">
+    <div class="main-container">
 
-        <a href="{{ url_for('community') }}"
-           style="color:#e05c00; font-size:0.9rem;">← Back to Community</a>
+        <a href="{{ url_for('community') }}" class="back-link">← Back to Community</a>
 
         <!-- POST -->
-        <div class="community-card" style="margin-top:16px;">
-            <div class="community-author">
-                <div class="community-avatar">
-                    {% if post.author_picture %}
-                        <img src="{{ post.author_picture }}"
-                             style="width:42px; height:42px; border-radius:50%; object-fit:cover;">
-                    {% else %}
-                        <div class="community-avatar-placeholder">👤</div>
-                    {% endif %}
-                </div>
-                <div class="community-author-info">
+        <div class="post-card">
+            <div class="author-row">
+                {% if post.author_picture %}
+                    <img src="{{ post.author_picture }}" class="avatar" alt="{{ post.author_username }}">
+                {% else %}
+                    <div class="avatar-placeholder">👤</div>
+                {% endif %}
+                <div class="author-info">
                     <strong>{{ post.author_username }}</strong>
-                    <span class="community-level">{{ post.author_level }}</span>
+                    <span class="author-level">{{ post.author_level }}</span>
                 </div>
-                <span class="community-time">{{ post.created_at }}</span>
+                <span class="post-time">{{ post.created_at }}</span>
             </div>
 
-            <p class="community-content">{{ post.content }}</p>
+            <p class="post-content">{{ post.content }}</p>
+          
+            {% if post.image %}
+        <div style="margin: .8rem 0;">
+             <img src="{{ post.image }}"
+         style="width:100%; max-height:420px; object-fit:cover;
+                border-radius:10px; border:1px solid var(--border);">
+        </div>
+            {% endif %}
 
             {% if post.recipe_name %}
-            <a href="{{ url_for('recipe_detail', recipe_name=post.recipe_name) }}"
-               class="community-recipe-link">
+            <a href="{{ url_for('recipe_detail', recipe_name=post.recipe_name) }}" class="recipe-pill">
                 🍲 {{ post.recipe_name }}
             </a>
             {% endif %}
 
-            <div class="community-actions">
-                <form method="POST"
-                      action="{{ url_for('like_post', post_id=post.id) }}"
-                      style="display:inline;">
-                    <button type="submit"
-                            class="community-action-btn {% if post.liked_by_me %}liked{% endif %}">
+            <div class="post-actions">
+                <form method="POST" action="{{ url_for('like_post', post_id=post.id) }}" style="display:inline;">
+                    <button type="submit" class="action-btn {% if post.liked_by_me %}liked{% endif %}">
                         ❤️ {{ post.likes }}
                     </button>
                 </form>
@@ -71,60 +351,56 @@
                       action="{{ url_for('delete_post', post_id=post.id) }}"
                       style="display:inline;"
                       onsubmit="return confirm('Delete this post?')">
-                    <button type="submit" class="community-action-btn" style="color:#c62828;">
-                        🗑️ Delete
-                    </button>
+                    <button type="submit" class="action-btn delete-btn">🗑️ Delete</button>
                 </form>
                 {% endif %}
             </div>
         </div>
 
         <!-- COMMENTS -->
-        <div class="recipe-section" style="margin-top:20px;">
+        <div class="comments-section">
             <h3>💬 Comments ({{ comments | length }})</h3>
 
             {% if comments %}
-            <div style="margin-top:12px;">
+            <div class="comment-list">
                 {% for comment in comments %}
                 <div class="comment-card">
                     <div class="comment-author">
                         {% if comment.author_picture %}
-                            <img src="{{ comment.author_picture }}"
-                                 style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                            <img src="{{ comment.author_picture }}" class="comment-avatar" alt="{{ comment.author_username }}">
                         {% else %}
-                            <span>👤</span>
+                            <div class="comment-avatar-placeholder">👤</div>
                         {% endif %}
                         <strong>{{ comment.author_username }}</strong>
-                        <span class="community-time">{{ comment.created_at }}</span>
+                        <span class="comment-time">{{ comment.created_at }}</span>
                     </div>
                     <p class="comment-content">{{ comment.content }}</p>
                     {% if comment.is_mine %}
-                    <form method="POST"
-                          action="{{ url_for('delete_comment', comment_id=comment.id) }}"
-                          onsubmit="return confirm('Delete this comment?')">
-                        <button type="submit"
-                                class="community-action-btn" style="color:#c62828; font-size:0.8rem;">
-                            🗑️ Delete
-                        </button>
-                    </form>
+                    <div class="comment-delete">
+                        <form method="POST"
+                              action="{{ url_for('delete_comment', comment_id=comment.id) }}"
+                              onsubmit="return confirm('Delete this comment?')">
+                            <button type="submit" class="action-btn delete-btn" style="font-size:.72rem; padding:.25rem .65rem;">
+                                🗑️ Delete
+                            </button>
+                        </form>
+                    </div>
                     {% endif %}
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <p style="color:#999; margin-top:12px;">No comments yet. Be the first!</p>
+            <div class="empty-comments">No comments yet — be the first! 👇</div>
             {% endif %}
+
+            <hr class="comment-divider">
 
             <!-- ADD COMMENT -->
             <form method="POST"
                   action="{{ url_for('add_comment', post_id=post.id) }}"
-                  style="margin-top:16px;">
-                <textarea name="content" placeholder="Write a comment..."
-                          rows="2" required
-                          style="width:100%; padding:12px; border:1px solid #ddd;
-                                 border-radius:10px; font-size:0.9rem; resize:none;
-                                 margin-bottom:8px;"></textarea>
-                <button type="submit" class="btn">💬 Comment</button>
+                  class="comment-form">
+                <textarea name="content" placeholder="Write a comment..." rows="2" required></textarea>
+                <button type="submit" class="btn-comment">💬 Post Comment</button>
             </form>
         </div>
 

@@ -434,10 +434,19 @@
 
             <div class="recipe-grid">
                 {% for recipe in recipes %}
-                <div class="recipe-card">
+               <div class="recipe-card">
 
-                    <div class="card-top">
-                        <span class="recipe-icon">🍲</span>
+    {% if recipe.card_image %}
+        <img src="{{ recipe.card_image }}" alt="{{ recipe.name }}"
+             style="width:100%; height:140px; object-fit:cover;
+                    border-radius:8px 8px 0 0; margin-bottom:12px;
+                    display:block;">
+    {% endif %}
+
+    <div class="card-top">
+        {% if not recipe.card_image %}
+            <span class="recipe-icon">🍲</span>
+        {% endif %}
                         {% if recipe.source == "database" %}
                             <span class="source-badge db">📚 Database</span>
                         {% else %}
