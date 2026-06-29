@@ -540,18 +540,20 @@
                 <p>Enter your budget and preference</p>
             </div>
 
-            <div class="card" onclick="window.location='{{ url_for('profile') }}'">
-                <div class="card-icon">👤</div>
-                <h3>My Profile</h3>
-                <p>Points, badges, and achievements</p>
-            </div>
-
             <div class="card" onclick="window.location='{{ url_for('challenges') }}'">
                 <span class="card-tag">🎯 Active</span>
                 <div class="card-icon">🏆</div>
                 <h3>Weekly Challenges</h3>
                 <p>Complete challenges for bonus points</p>
             </div>
+
+            <div class="card" onclick="window.location='{{ url_for('profile') }}'">
+                <div class="card-icon">👤</div>
+                <h3>My Profile</h3>
+                <p>Points, badges, and achievements</p>
+            </div>
+
+            
 
             <div class="card" onclick="window.location='{{ url_for('leaderboard') }}'">
                 <div class="card-icon">📊</div>

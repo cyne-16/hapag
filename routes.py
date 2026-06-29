@@ -88,20 +88,63 @@ def get_recipe_image(recipe_name, category=""):
 # ─────────────────────────────────────────────
 # HOME
 # ─────────────────────────────────────────────
-from datetime import datetime
-
-def log_activity(action_type, username, details=""):
-    """Records a user activity event for admin statistics."""
-    try:
-        db.activity_logs.insert_one({
-            "action_type": action_type,  # "login", "search", "cooked", "register"
-            "username": username,
-            "details": details,
-            "timestamp": datetime.now(),
-            "date": datetime.now().strftime("%Y-%m-%d")
-        })
-    except Exception as e:
-        print(f"Activity log error: {e}")
+from datetime import datetime, timedelta
+ 
+ 
+def get_activity_stats():
+    """Computes the activity-statistics block shared by the admin dashboard
+    and the standalone statistics page. Pulled out of admin_statistics()
+    unchanged so both routes stay in sync."""
+ 
+    today = datetime.now().strftime("%Y-%m-%d")
+    week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+ 
+    # Active users today
+    active_today = len(db.activity_logs.distinct("username", {"date": today}))
+ 
+    # Active users this week
+    active_week = len(db.activity_logs.distinct("username", {"date": {"$gte": week_ago}}))
+ 
+    # Total searches this week
+    searches_week = db.activity_logs.count_documents({"action_type": "search", "date": {"$gte": week_ago}})
+ 
+    # Total recipes cooked this week
+    cooked_week = db.activity_logs.count_documents({"action_type": "cooked", "date": {"$gte": week_ago}})
+ 
+    # New registrations this week
+    new_users_week = db.activity_logs.count_documents({"action_type": "register", "date": {"$gte": week_ago}})
+ 
+    # Most searched dishes (all time)
+    search_pipeline = [
+        {"$match": {"action_type": "search"}},
+        {"$group": {"_id": "$details", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 5}
+    ]
+    most_searched = list(db.activity_logs.aggregate(search_pipeline))
+ 
+    # Most cooked recipes platform-wide (all time)
+    cooked_pipeline = [
+        {"$match": {"action_type": "cooked"}},
+        {"$group": {"_id": "$details", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 5}
+    ]
+    most_cooked_platform = list(db.activity_logs.aggregate(cooked_pipeline))
+ 
+    # Recent activity feed (last 20 events)
+    recent_activity = list(db.activity_logs.find().sort("timestamp", -1).limit(20))
+ 
+    return {
+        "active_today": active_today,
+        "active_week": active_week,
+        "searches_week": searches_week,
+        "cooked_week": cooked_week,
+        "new_users_week": new_users_week,
+        "most_searched": most_searched,
+        "most_cooked_platform": most_cooked_platform,
+        "recent_activity": recent_activity,
+    }
 
 def get_recipe_tier(estimated_cost_str):
     """Automatically determines recipe tier based on estimated cost."""
@@ -1135,11 +1178,13 @@ def admin_dashboard():
     total_users = db.users.count_documents({})
     total_recipes = db.recipes.count_documents({})
     recent_users = list(db.users.find().sort("_id", -1).limit(5))
-
+    activity_stats = get_activity_stats()
+ 
     return render_template("admin/dashboard.html",
                            total_users=total_users,
                            total_recipes=total_recipes,
-                           recent_users=recent_users)
+                           recent_users=recent_users,
+                           **activity_stats)
 
 # ─────────────────────────────────────────────
 # ADMIN - MANAGE USERS
@@ -1149,17 +1194,176 @@ def admin_dashboard():
 @login_required
 @admin_required
 def admin_users():
-    users = list(db.users.find())
-    return render_template("admin/users.html", users=users)
+    active_users = list(db.users.find({"archived": {"$ne": True}}))
+    archived_users = list(db.users.find({"archived": True}))
+    return render_template("admin/users.html", users=active_users, archived_users=archived_users)
 
 
 @app.route("/admin/users/delete/<user_id>", methods=["POST"])
 @login_required
 @admin_required
 def admin_delete_user(user_id):
-    db.users.delete_one({"_id": ObjectId(user_id)})
-    flash("User deleted successfully.", "success")
+    db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"archived": True}}
+    )
+    flash("User archived successfully.", "info")
     return redirect(url_for("admin_users"))
+
+
+@app.route("/admin/users/restore/<user_id>", methods=["POST"])
+@login_required
+@admin_required
+def admin_restore_user(user_id):
+    db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"archived": False}}
+    )
+    flash("User restored successfully.", "success")
+    return redirect(url_for("admin_users"))
+
+@app.route("/admin/users/export/pdf")
+@login_required
+@admin_required
+def admin_export_users_pdf():
+    show = request.args.get("show", "active")
+
+    if show == "archived":
+        users = list(db.users.find({"archived": True}))
+    else:
+        users = list(db.users.find({"archived": {"$ne": True}}))
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter,
+                            leftMargin=0.75*inch, rightMargin=0.75*inch,
+                            topMargin=0.75*inch, bottomMargin=0.75*inch)
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle("title", parent=styles["Heading1"],
+                                 fontSize=18, textColor=colors.HexColor("#0D1B2A"),
+                                 spaceAfter=4)
+    sub_style   = ParagraphStyle("sub", parent=styles["Normal"],
+                                 fontSize=9, textColor=colors.HexColor("#8FAABB"),
+                                 spaceAfter=16)
+
+    story = [
+        Paragraph("👥 Hapag — User List", title_style),
+        Paragraph(
+            f"{'Archived' if show == 'archived' else 'Active'} users"
+            f" · Exported {datetime.now().strftime('%B %d, %Y')}",
+            sub_style
+        ),
+    ]
+
+    headers = ["Username", "Email", "Points", "Level", "Badges", "Status"]
+    table_data = [headers] + [
+        [
+            u.get("username", ""),
+            u.get("email", ""),
+            str(u.get("points", 0)),
+            str(u.get("level", "")),
+            str(len(u.get("badges", []))),
+            "Archived" if u.get("archived") else "Active",
+        ]
+        for u in users
+    ]
+
+    col_widths = [1.5*inch, 2.2*inch, 0.8*inch, 0.9*inch, 0.8*inch, 1.0*inch]
+    t = Table(table_data, colWidths=col_widths, repeatRows=1)
+    t.setStyle(TableStyle([
+        ("BACKGROUND",     (0,0), (-1,0), colors.HexColor("#112236")),
+        ("TEXTCOLOR",      (0,0), (-1,0), colors.HexColor("#38BDF8")),
+        ("FONTNAME",       (0,0), (-1,0), "Helvetica-Bold"),
+        ("FONTSIZE",       (0,0), (-1,0), 8),
+        ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, colors.HexColor("#F5F9FF")]),
+        ("FONTSIZE",       (0,1), (-1,-1), 8),
+        ("FONTNAME",       (0,1), (-1,-1), "Helvetica"),
+        ("GRID",           (0,0), (-1,-1), 0.4, colors.HexColor("#CCCCCC")),
+        ("TOPPADDING",     (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING",  (0,0), (-1,-1), 6),
+        ("LEFTPADDING",    (0,0), (-1,-1), 8),
+        ("VALIGN",         (0,0), (-1,-1), "MIDDLE"),
+    ]))
+    story.append(t)
+
+    doc.build(story)
+    buffer.seek(0)
+    filename = f"hapag_users_{show}_{datetime.now().strftime('%Y%m%d')}.pdf"
+    return send_file(buffer, mimetype="application/pdf",
+                     as_attachment=True, download_name=filename)
+
+
+@app.route("/admin/users/export/docx")
+@login_required
+@admin_required
+def admin_export_users_docx():
+    show = request.args.get("show", "active")
+
+    if show == "archived":
+        users = list(db.users.find({"archived": True}))
+    else:
+        users = list(db.users.find({"archived": {"$ne": True}}))
+
+    doc = Document()
+
+    for section in doc.sections:
+        section.top_margin    = Inches(1)
+        section.bottom_margin = Inches(1)
+        section.left_margin   = Inches(1)
+        section.right_margin  = Inches(1)
+
+    title = doc.add_heading("Hapag — User List", 0)
+    title.runs[0].font.color.rgb = RGBColor(0x0D, 0x1B, 0x2A)
+
+    sub = doc.add_paragraph()
+    sub.paragraph_format.space_after = Pt(12)
+    run = sub.add_run(
+        f"{'Archived' if show == 'archived' else 'Active'} users"
+        f" · Exported {datetime.now().strftime('%B %d, %Y')}"
+    )
+    run.font.size = Pt(9)
+    run.font.color.rgb = RGBColor(0x8F, 0xAA, 0xBB)
+
+    headers = ["Username", "Email", "Points", "Level", "Badges", "Status"]
+    table = doc.add_table(rows=1, cols=len(headers))
+    table.style = "Table Grid"
+
+    hdr_cells = table.rows[0].cells
+    for i, h in enumerate(headers):
+        hdr_cells[i].text = h
+        run = hdr_cells[i].paragraphs[0].runs[0]
+        run.bold = True
+        run.font.size = Pt(9)
+        run.font.color.rgb = RGBColor(0x38, 0xBD, 0xF8)
+        tc = hdr_cells[i]._tc
+        tcPr = tc.get_or_add_tcPr()
+        shd = OxmlElement("w:shd")
+        shd.set(qn("w:val"), "clear")
+        shd.set(qn("w:color"), "auto")
+        shd.set(qn("w:fill"), "112236")
+        tcPr.append(shd)
+
+    for u in users:
+        row_cells = table.add_row().cells
+        values = [
+            u.get("username", ""),
+            u.get("email", ""),
+            str(u.get("points", 0)),
+            str(u.get("level", "")),
+            str(len(u.get("badges", []))),
+            "Archived" if u.get("archived") else "Active",
+        ]
+        for i, val in enumerate(values):
+            row_cells[i].text = val
+            row_cells[i].paragraphs[0].runs[0].font.size = Pt(9)
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    filename = f"hapag_users_{show}_{datetime.now().strftime('%Y%m%d')}.docx"
+    return send_file(buffer,
+                     mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                     as_attachment=True, download_name=filename)
 
 
 # ─────────────────────────────────────────────
@@ -1171,18 +1375,20 @@ def admin_delete_user(user_id):
 @admin_required
 def admin_recipes():
     category_filter = request.args.get("category", "")
+    show = request.args.get("show", "active")   # "active" or "archived"
 
+    query = {"archived": {"$ne": True}} if show == "active" else {"archived": True}
     if category_filter:
-        recipes = list(db.recipes.find({"category": category_filter}))
-    else:
-        recipes = list(db.recipes.find())
+        query["category"] = category_filter
 
+    recipes = list(db.recipes.find(query))
     categories = db.recipes.distinct("category")
 
     return render_template("admin/recipes.html",
                            recipes=recipes,
                            categories=categories,
-                           selected_category=category_filter)
+                           selected_category=category_filter,
+                           show=show)
 
 @app.route("/admin/recipes/add", methods=["GET", "POST"])
 @login_required
@@ -1299,13 +1505,29 @@ def admin_edit_recipe(recipe_id):
     return render_template("admin/edit_recipe.html", recipe=recipe)
 
 
+@app.route("/admin/recipes/archive/<recipe_id>", methods=["POST"])
+@login_required
+@admin_required
+def admin_archive_recipe(recipe_id):
+    db.recipes.update_one({"_id": ObjectId(recipe_id)}, {"$set": {"archived": True}})
+    flash("Recipe archived.", "info")
+    return redirect(url_for("admin_recipes"))
+
+@app.route("/admin/recipes/restore/<recipe_id>", methods=["POST"])
+@login_required
+@admin_required
+def admin_restore_recipe(recipe_id):
+    db.recipes.update_one({"_id": ObjectId(recipe_id)}, {"$set": {"archived": False}})
+    flash("Recipe restored.", "success")
+    return redirect(url_for("admin_recipes", show="archived"))
+
 @app.route("/admin/recipes/delete/<recipe_id>", methods=["POST"])
 @login_required
 @admin_required
 def admin_delete_recipe(recipe_id):
     db.recipes.delete_one({"_id": ObjectId(recipe_id)})
-    flash("Recipe deleted successfully.", "success")
-    return redirect(url_for("admin_recipes"))
+    flash("Recipe permanently deleted.", "success")
+    return redirect(url_for("admin_recipes", show="archived"))
 
 # ─────────────────────────────────────────────
 # FORGOT PASSWORD
@@ -1599,56 +1821,8 @@ def admin_dismiss_ai_recipe(log_id):
 @login_required
 @admin_required
 def admin_statistics():
-    from datetime import timedelta
-
-    today = datetime.now().strftime("%Y-%m-%d")
-    week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-
-    # Active users today
-    active_today = len(db.activity_logs.distinct("username", {"date": today}))
-
-    # Active users this week
-    active_week = len(db.activity_logs.distinct("username", {"date": {"$gte": week_ago}}))
-
-    # Total searches this week
-    searches_week = db.activity_logs.count_documents({"action_type": "search", "date": {"$gte": week_ago}})
-
-    # Total recipes cooked this week
-    cooked_week = db.activity_logs.count_documents({"action_type": "cooked", "date": {"$gte": week_ago}})
-
-    # New registrations this week
-    new_users_week = db.activity_logs.count_documents({"action_type": "register", "date": {"$gte": week_ago}})
-
-    # Most searched dishes (all time)
-    search_pipeline = [
-        {"$match": {"action_type": "search"}},
-        {"$group": {"_id": "$details", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}},
-        {"$limit": 5}
-    ]
-    most_searched = list(db.activity_logs.aggregate(search_pipeline))
-
-    # Most cooked recipes platform-wide (all time)
-    cooked_pipeline = [
-        {"$match": {"action_type": "cooked"}},
-        {"$group": {"_id": "$details", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}},
-        {"$limit": 5}
-    ]
-    most_cooked_platform = list(db.activity_logs.aggregate(cooked_pipeline))
-
-    # Recent activity feed (last 20 events)
-    recent_activity = list(db.activity_logs.find().sort("timestamp", -1).limit(20))
-
-    return render_template("admin/statistics.html",
-                           active_today=active_today,
-                           active_week=active_week,
-                           searches_week=searches_week,
-                           cooked_week=cooked_week,
-                           new_users_week=new_users_week,
-                           most_searched=most_searched,
-                           most_cooked_platform=most_cooked_platform,
-                           recent_activity=recent_activity)
+    activity_stats = get_activity_stats()
+    return render_template("admin/statistics.html", **activity_stats)
 
 # ─────────────────────────────────────────────
 # WEEKLY CHALLENGES PAGE
@@ -2844,3 +3018,176 @@ def format_time_ago(dt):
     if s < 3600:    return f"{s // 60}m ago"
     if s < 86400:   return f"{s // 3600}h ago"
     return f"{s // 86400}d ago"
+
+from flask import send_file
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from docx import Document
+from docx.shared import Pt, RGBColor, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+import io
+from datetime import datetime
+
+def get_rarity(cost_str):
+    digits = cost_str.replace("₱", "").replace(",", "").strip()
+    cost = int(digits) if digits.isdigit() else 0
+    if cost <= 150:   return "Common"
+    if cost <= 300:   return "Uncommon"
+    if cost <= 500:   return "Rare"
+    return "Legendary"
+
+@app.route("/admin/recipes/export/pdf")
+@login_required
+@admin_required
+def admin_export_recipes_pdf():
+    show = request.args.get("show", "active")
+    category_filter = request.args.get("category", "")
+
+    query = {"archived": {"$ne": True}} if show == "active" else {"archived": True}
+    if category_filter:
+        query["category"] = category_filter
+    recipes = list(db.recipes.find(query))
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter,
+                            leftMargin=0.75*inch, rightMargin=0.75*inch,
+                            topMargin=0.75*inch, bottomMargin=0.75*inch)
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle("title", parent=styles["Heading1"],
+                                 fontSize=18, textColor=colors.HexColor("#0D1B2A"),
+                                 spaceAfter=4)
+    sub_style   = ParagraphStyle("sub", parent=styles["Normal"],
+                                 fontSize=9, textColor=colors.HexColor("#8FAABB"),
+                                 spaceAfter=16)
+
+    story = [
+        Paragraph("🍲 Hapag — Recipe List", title_style),
+        Paragraph(f"{'Archived' if show == 'archived' else 'Active'} recipes"
+                  + (f" · {category_filter}" if category_filter else "")
+                  + f" · Exported {datetime.now().strftime('%B %d, %Y')}", sub_style),
+    ]
+
+    headers = ["Recipe Name", "Category", "Servings", "Est. Cost", "Rarity", "Req. Level"]
+    table_data = [headers] + [
+        [
+            r.get("name", ""),
+            r.get("category", "—"),
+            str(r.get("servings", "")),
+            r.get("estimated_total_cost", "₱0"),
+            get_rarity(r.get("estimated_total_cost", "₱0")),
+            r.get("required_level", "Beginner Cook"),
+        ]
+        for r in recipes
+    ]
+
+    col_widths = [2.0*inch, 1.2*inch, 0.8*inch, 1.0*inch, 1.0*inch, 1.5*inch]
+    t = Table(table_data, colWidths=col_widths, repeatRows=1)
+    t.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0), (-1,0), colors.HexColor("#112236")),
+        ("TEXTCOLOR",     (0,0), (-1,0), colors.HexColor("#38BDF8")),
+        ("FONTNAME",      (0,0), (-1,0), "Helvetica-Bold"),
+        ("FONTSIZE",      (0,0), (-1,0), 8),
+        ("ROWBACKGROUNDS",(0,1), (-1,-1), [colors.white, colors.HexColor("#F5F9FF")]),
+        ("FONTSIZE",      (0,1), (-1,-1), 8),
+        ("FONTNAME",      (0,1), (-1,-1), "Helvetica"),
+        ("GRID",          (0,0), (-1,-1), 0.4, colors.HexColor("#CCCCCC")),
+        ("TOPPADDING",    (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+        ("LEFTPADDING",   (0,0), (-1,-1), 8),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+    ]))
+    story.append(t)
+
+    doc.build(story)
+    buffer.seek(0)
+    filename = f"hapag_recipes_{show}_{datetime.now().strftime('%Y%m%d')}.pdf"
+    return send_file(buffer, mimetype="application/pdf",
+                     as_attachment=True, download_name=filename)
+
+
+@app.route("/admin/recipes/export/docx")
+@login_required
+@admin_required
+def admin_export_recipes_docx():
+    show = request.args.get("show", "active")
+    category_filter = request.args.get("category", "")
+
+    query = {"archived": {"$ne": True}} if show == "active" else {"archived": True}
+    if category_filter:
+        query["category"] = category_filter
+    recipes = list(db.recipes.find(query))
+
+    doc = Document()
+
+    # Page margins
+    for section in doc.sections:
+        section.top_margin    = Inches(1)
+        section.bottom_margin = Inches(1)
+        section.left_margin   = Inches(1)
+        section.right_margin  = Inches(1)
+
+    # Title
+    title = doc.add_heading("Hapag — Recipe List", 0)
+    title.runs[0].font.color.rgb = RGBColor(0x0D, 0x1B, 0x2A)
+
+    # Subtitle
+    sub = doc.add_paragraph()
+    sub.paragraph_format.space_after = Pt(12)
+    run = sub.add_run(
+        f"{'Archived' if show == 'archived' else 'Active'} recipes"
+        + (f" · {category_filter}" if category_filter else "")
+        + f" · Exported {datetime.now().strftime('%B %d, %Y')}"
+    )
+    run.font.size = Pt(9)
+    run.font.color.rgb = RGBColor(0x8F, 0xAA, 0xBB)
+
+    # Table
+    headers = ["Recipe Name", "Category", "Servings", "Est. Cost", "Rarity", "Req. Level"]
+    table = doc.add_table(rows=1, cols=len(headers))
+    table.style = "Table Grid"
+
+    # Header row
+    hdr_cells = table.rows[0].cells
+    for i, h in enumerate(headers):
+        hdr_cells[i].text = h
+        run = hdr_cells[i].paragraphs[0].runs[0]
+        run.bold = True
+        run.font.size = Pt(9)
+        run.font.color.rgb = RGBColor(0x38, 0xBD, 0xF8)
+        # Dark background
+        tc = hdr_cells[i]._tc
+        tcPr = tc.get_or_add_tcPr()
+        shd = OxmlElement("w:shd")
+        shd.set(qn("w:val"), "clear")
+        shd.set(qn("w:color"), "auto")
+        shd.set(qn("w:fill"), "112236")
+        tcPr.append(shd)
+
+    # Data rows
+    for r in recipes:
+        row_cells = table.add_row().cells
+        values = [
+            r.get("name", ""),
+            r.get("category", "—"),
+            str(r.get("servings", "")),
+            r.get("estimated_total_cost", "₱0"),
+            get_rarity(r.get("estimated_total_cost", "₱0")),
+            r.get("required_level", "Beginner Cook"),
+        ]
+        for i, val in enumerate(values):
+            row_cells[i].text = val
+            row_cells[i].paragraphs[0].runs[0].font.size = Pt(9)
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    filename = f"hapag_recipes_{show}_{datetime.now().strftime('%Y%m%d')}.docx"
+    return send_file(buffer,
+                     mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                     as_attachment=True, download_name=filename)

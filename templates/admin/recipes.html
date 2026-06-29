@@ -267,6 +267,40 @@
             .ingredients-table { display: block; overflow-x: auto; white-space: nowrap; }
             .toolbar { flex-direction: column; align-items: flex-start; }
         }
+        /* ── TOGGLE ── */
+.toggle-group {
+    display: flex;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.toggle-group a {
+    padding: .42rem 1rem;
+    font-size: .76rem;
+    font-weight: 800;
+    text-decoration: none;
+    color: var(--muted);
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    transition: background .18s, color .18s;
+}
+.toggle-group a.active-tab {
+    background: linear-gradient(135deg, var(--sky), var(--purple));
+    color: #fff;
+}
+.toggle-group a:hover:not(.active-tab) { background: var(--border); color: var(--cream); }
+
+.btn-restore {
+    background: rgba(245,166,35,.12);
+    border-color: rgba(245,166,35,.35);
+    color: var(--gold);
+}
+.btn-perma-delete {
+    background: rgba(255,107,53,.22);
+    border-color: rgba(255,107,53,.5);
+    color: var(--orange);
+}
     </style>
 </head>
 <body>
@@ -300,18 +334,39 @@
         {% endwith %}
 
         <div class="toolbar">
-            <a href="{{ url_for('admin_add_recipe') }}" class="btn-add">
-                ➕ Add New Recipe
-            </a>
-            <form method="GET">
-                <select name="category" class="category-select" onchange="this.form.submit()">
-                    <option value="">All Categories</option>
-                    {% for cat in categories %}
-                        <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
-                    {% endfor %}
-                </select>
-            </form>
-        </div>
+   <div style="display:flex; gap:.7rem; align-items:center; flex-wrap:wrap;">
+    <a href="{{ url_for('admin_add_recipe') }}" class="btn-add">
+        ➕ Add New Recipe
+    </a>
+    <a href="{{ url_for('admin_export_recipes_pdf', show=show, category=selected_category) }}"
+       class="btn-add" style="background: linear-gradient(135deg,#e53935,#b71c1c);">
+        📄 Export PDF
+    </a>
+    <a href="{{ url_for('admin_export_recipes_docx', show=show, category=selected_category) }}"
+       class="btn-add" style="background: linear-gradient(135deg,#1565c0,#0d47a1);">
+        📝 Export Word
+    </a>
+    <div class="toggle-group">
+        <a href="{{ url_for('admin_recipes', show='active', category=selected_category) }}"
+           class="{{ 'active-tab' if show == 'active' else '' }}">
+            ✅ Active
+        </a>
+        <a href="{{ url_for('admin_recipes', show='archived', category=selected_category) }}"
+           class="{{ 'active-tab' if show == 'archived' else '' }}">
+            🗃 Archived
+        </a>
+    </div>
+</div>
+    <form method="GET">
+        <input type="hidden" name="show" value="{{ show }}">
+        <select name="category" class="category-select" onchange="this.form.submit()">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
 
         <div class="recipe-section">
             {% if recipes %}
@@ -350,20 +405,29 @@
                         </td>
                         <td>{{ recipe.required_level or "Beginner Cook" }}</td>
                         <td>
-                            <div class="action-group">
-                                <a href="{{ url_for('admin_edit_recipe', recipe_id=recipe._id) }}" class="btn-action btn-edit">
-                                    ✏️ Edit
-                                </a>
-                                <a href="{{ url_for('admin_update_prices', recipe_id=recipe._id) }}" class="btn-action btn-prices">
-                                    💰 Prices
-                                </a>
-                                <form method="POST"
-                                      action="{{ url_for('admin_delete_recipe', recipe_id=recipe._id) }}"
-                                      onsubmit="return confirm('Delete this recipe?')">
-                                    <button type="submit" class="btn-delete">🗑 Delete</button>
-                                </form>
-                            </div>
-                        </td>
+    <div class="action-group">
+        {% if show == 'active' %}
+            <a href="{{ url_for('admin_edit_recipe', recipe_id=recipe._id) }}" class="btn-action btn-edit">
+                ✏️ Edit
+            </a>
+            <a href="{{ url_for('admin_update_prices', recipe_id=recipe._id) }}" class="btn-action btn-prices">
+                💰 Prices
+            </a>
+            <form method="POST" action="{{ url_for('admin_archive_recipe', recipe_id=recipe._id) }}">
+                <button type="submit" class="btn-action btn-delete">🗃 Archive</button>
+            </form>
+        {% else %}
+            <form method="POST" action="{{ url_for('admin_restore_recipe', recipe_id=recipe._id) }}">
+                <button type="submit" class="btn-action btn-restore">♻️ Restore</button>
+            </form>
+            <form method="POST"
+                  action="{{ url_for('admin_delete_recipe', recipe_id=recipe._id) }}"
+                  onsubmit="return confirm('Permanently delete this recipe? This cannot be undone.')">
+                <button type="submit" class="btn-action btn-perma-delete">🗑 Delete</button>
+            </form>
+        {% endif %}
+    </div>
+</td>
                     </tr>
                     {% endfor %}
                 </tbody>
