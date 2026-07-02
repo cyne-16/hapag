@@ -517,6 +517,12 @@
                 <i class="fas fa-info-circle"></i>
                 Searches, Recipes Cooked, and New Users figures are for the last 7 days.
             </p>
+            <form method="POST" action="{{ url_for('clear_image_cache') }}"
+      onsubmit="return confirm('Clear all cached recipe images? They will re-fetch automatically.')">
+    <button type="submit" class="btn-delete" style="font-size:0.85rem;">
+        🖼️ Clear Image Cache
+    </button>
+</form>
 
             <!-- KEY METRICS -->
             <div class="stats-row">

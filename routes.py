@@ -36,53 +36,72 @@ def load_user(user_id):
 import requests as http_requests
 
 def get_recipe_image(recipe_name, category=""):
-    """
-    Fetches a food image from Unsplash for a given recipe name.
-    Caches the result in MongoDB to avoid repeated API calls.
-    Returns an image URL string or a fallback emoji placeholder.
-    """
-    # Check cache first
+    # Check if recipe has a manually set custom image in the database
+    db_recipe = db.recipes.find_one(
+        {"name": {"$regex": f"^{recipe_name}$", "$options": "i"}},
+        {"custom_image_url": 1}
+    )
+    if db_recipe and db_recipe.get("custom_image_url"):
+        return db_recipe["custom_image_url"]
+
+    # Check catalog too
+    catalog_recipe = db.cookbook_catalog.find_one(
+        {"name": {"$regex": f"^{recipe_name}$", "$options": "i"}},
+        {"custom_image_url": 1}
+    )
+    if catalog_recipe and catalog_recipe.get("custom_image_url"):
+        return catalog_recipe["custom_image_url"]
+
+    # Check cache
     cache_key = recipe_name.lower().strip()
     cached = db.recipe_image_cache.find_one({"recipe_name": cache_key})
     if cached:
         return cached["image_url"]
 
-    # Build search query
-    search_query = f"{recipe_name} Filipino food"
+    # Fall back to Unsplash search
+    queries_to_try = [
+        f"{recipe_name} Filipino food dish",
+        f"{recipe_name} food",
+        f"{category} Filipino food" if category else None,
+        "Filipino food dish"
+    ]
+    queries_to_try = [q for q in queries_to_try if q]
 
     try:
         access_key = os.getenv("UNSPLASH_ACCESS_KEY")
-        response = http_requests.get(
-            "https://api.unsplash.com/search/photos",
-            params={
-                "query": search_query,
-                "per_page": 1,
-                "orientation": "landscape",
-                "content_filter": "high"
-            },
-            headers={"Authorization": f"Client-ID {access_key}"},
-            timeout=5
-        )
+        image_url = None
 
-        data = response.json()
-        results = data.get("results", [])
+        for query in queries_to_try:
+            response = http_requests.get(
+                "https://api.unsplash.com/search/photos",
+                params={
+                    "query": query,
+                    "per_page": 3,
+                    "orientation": "landscape",
+                    "content_filter": "high"
+                },
+                headers={"Authorization": f"Client-ID {access_key}"},
+                timeout=5
+            )
+            data = response.json()
+            results = data.get("results", [])
 
-        if results:
-            image_url = results[0]["urls"]["regular"]
+            if results:
+                import random
+                image_url = random.choice(results[:3])["urls"]["regular"]
+                break
 
-            # Cache the result
+        if image_url:
             db.recipe_image_cache.insert_one({
                 "recipe_name": cache_key,
                 "image_url": image_url,
                 "cached_at": datetime.now()
             })
-
             return image_url
 
     except Exception as e:
         print(f"Image fetch error for {recipe_name}: {e}")
 
-    # Fallback — return None, template will show emoji placeholder
     return None
 
 # ─────────────────────────────────────────────
@@ -1479,6 +1498,7 @@ def admin_add_recipe():
     if request.method == "POST":
         name = request.form.get("name")
         description = request.form.get("description")
+        custom_image_url = request.form.get("custom_image_url", "").strip()
         servings = request.form.get("servings")
         prep_time = request.form.get("prep_time")
         cook_time = request.form.get("cook_time")
@@ -1510,6 +1530,7 @@ def admin_add_recipe():
         db.recipes.insert_one({
             "name": name,
             "description": description,
+            "custom_image_url": custom_image_url,
             "servings": servings,
             "prep_time": prep_time,
             "cook_time": cook_time,
@@ -1537,6 +1558,7 @@ def admin_edit_recipe(recipe_id):
     if request.method == "POST":
         name = request.form.get("name")
         description = request.form.get("description")
+        custom_image_url = request.form.get("custom_image_url", "").strip()
         servings = request.form.get("servings")
         prep_time = request.form.get("prep_time")
         cook_time = request.form.get("cook_time")
@@ -1568,6 +1590,7 @@ def admin_edit_recipe(recipe_id):
             {"$set": {
                 "name": name,
                 "description": description,
+                "custom_image_url": custom_image_url,
                 "servings": servings,
                 "prep_time": prep_time,
                 "cook_time": cook_time,
@@ -3428,3 +3451,12 @@ def delete_rating(recipe_name):
     })
     flash("Your rating has been removed.", "success")
     return redirect(url_for("recipe_detail", recipe_name=recipe_name))
+
+@app.route("/admin/clear-image-cache", methods=["POST"])
+@login_required
+@admin_required
+def clear_image_cache():
+    count = db.recipe_image_cache.count_documents({})
+    db.recipe_image_cache.delete_many({})
+    flash(f"Image cache cleared — {count} cached images removed. They will re-fetch on next view.", "success")
+    return redirect(url_for("admin_dashboard"))

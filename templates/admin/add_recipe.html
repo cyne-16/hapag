@@ -363,6 +363,13 @@
                         </select>
                     </div>
                 </div>
+                <label>Custom Image URL (optional — paste a direct food photo URL)</label>
+<input type="text" name="custom_image_url"
+       placeholder="https://images.unsplash.com/..."
+       value="{{ recipe.custom_image_url if recipe.custom_image_url else '' }}">
+<p style="font-size:0.8rem; color:#888; margin-top:-10px; margin-bottom:16px;">
+    Leave blank to use auto-search. Paste a specific image URL to override.
+</p>
 
                 <label>Cooking Tips (optional)</label>
                 <input type="text" name="tips" placeholder="Any helpful tips...">
