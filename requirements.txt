@@ -1,7 +1,7 @@
 Flask==3.0.3
 gunicorn==22.0.0
 python-dotenv==1.0.1
-pymongo[srv]==4.8.0
+pymongo[srv]==4.10.1
 certifi==2024.7.4
 Flask-Login==0.6.3
 Flask-Bcrypt==1.0.1
