@@ -390,22 +390,8 @@
 <body>
 
     <!-- NAVBAR -->
-    <nav class="navbar">
-        <div class="nav-brand">
-            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
-            Hapag
-        </div>
-        <div class="nav-links">
-            <a href="{{ url_for('dashboard') }}">Home</a>
-            <a href="{{ url_for('recommend') }}">Recipes</a>
-            <a href="{{ url_for('challenges') }}">Challenges</a>
-            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
-            <a href="{{ url_for('community') }}">Community</a>
-            <a href="{{ url_for('cookbook') }}">Cookbook</a>
-            <a href="{{ url_for('profile') }}">Profile</a>
-            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
-        </div>
-    </nav>
+     {% include 'navbar.html' %}
+
 
     <div class="main-container">
 
@@ -465,15 +451,29 @@
                         {% else %}
                             <span class="meta-pill budget-over">⚠️ Over Budget</span>
                         {% endif %}
-
                         {% if recipe.category %}
                             <span class="meta-pill category">🏷️ {{ recipe.category }}</span>
                         {% endif %}
-
                         <span class="meta-pill">💰 {{ recipe.estimated_cost }}</span>
                         <span class="meta-pill">⏱ {{ recipe.prep_time }}</span>
                         <span class="meta-pill">🔥 {{ recipe.cook_time }}</span>
                         <span class="meta-pill">👥 {{ recipe.servings }}</span>
+                    </div>
+
+                    <!-- RATING DISPLAY ON CARD -->
+                    <div style="font-size:0.85rem; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+                        {% if recipe.total_ratings and recipe.total_ratings > 0 %}
+                            <span style="color:#f59e0b;">
+                                {% for i in range(1, 6) %}
+                                    {% if i <= recipe.avg_rating %}★{% else %}☆{% endif %}
+                                {% endfor %}
+                            </span>
+                            <span style="color:#f59e0b; font-weight:700;">{{ recipe.avg_rating }}</span>
+                            <span style="color:var(--muted); font-size:0.78rem;">({{ recipe.total_ratings }} review{{ 's' if recipe.total_ratings != 1 }})</span>
+                        {% else %}
+                            <span style="color:#444;">★★★★★</span>
+                            <span style="color:var(--muted); font-size:0.78rem;">No ratings yet</span>
+                        {% endif %}
                     </div>
 
                     <a href="{{ url_for('recipe_detail', recipe_name=recipe.name) }}"

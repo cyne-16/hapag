@@ -596,22 +596,8 @@
 <body>
 
     <!-- NAVBAR -->
-    <nav class="navbar">
-        <div class="nav-brand">
-            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
-            Hapag
-        </div>
-        <div class="nav-links">
-            <a href="{{ url_for('dashboard') }}">Home</a>
-            <a href="{{ url_for('recommend') }}">Recipes</a>
-            <a href="{{ url_for('challenges') }}">Challenges</a>
-            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
-            <a href="{{ url_for('community') }}">Community</a>
-            <a href="{{ url_for('cookbook') }}">Cookbook</a>
-            <a href="{{ url_for('profile') }}">Profile</a>
-            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
-        </div>
-    </nav>
+     {% include 'navbar.html' %}
+
 
     <div class="main-container">
 

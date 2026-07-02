@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ recipe.name }} - Hapag</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --night:   #0D1B2A;
@@ -25,13 +25,16 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background: var(--night);
+            background:
+                radial-gradient(circle at 8% 0%, rgba(245,166,35,0.06) 0%, transparent 40%),
+                radial-gradient(circle at 92% 60%, rgba(56,189,248,0.05) 0%, transparent 40%),
+                var(--night);
             color: var(--cream);
             font-family: var(--font-body);
             min-height: 100vh;
         }
 
-        /* ── NAVBAR ── */
+        /* ── NAVBAR (unchanged) ── */
         .navbar {
             position: sticky !important;
             top: 0 !important; left: 0 !important; right: 0 !important;
@@ -44,18 +47,14 @@
             align-items: center !important; justify-content: space-between !important;
             padding: 0 2rem !important; height: 60px !important;
         }
-
         .nav-brand {
             font-family: var(--font-display);
             font-size: 1.5rem; color: var(--gold);
             text-shadow: 0 0 18px rgba(245,166,35,.5);
             display: flex; align-items: center; gap: .4rem;
         }
-
         .nav-brand img { width: 32px; height: 32px; object-fit: contain; }
-
         .nav-links { display: flex; align-items: center; gap: .2rem; flex-wrap: wrap; }
-
         .nav-links a {
             color: var(--muted); text-decoration: none;
             font-size: .78rem; font-weight: 700;
@@ -63,474 +62,565 @@
             transition: color .2s, background .2s;
             letter-spacing: .02em; text-transform: uppercase;
         }
-
         .nav-links a:hover { color: var(--cream); background: var(--panel); }
-
         .nav-links a:last-child { color: var(--orange); border: 1px solid rgba(255,107,53,.3); }
         .nav-links a:last-child:hover { background: rgba(255,107,53,.12); }
 
-        /* ── MYSTERY BONUS OVERLAY ── */
+        /* ── MYSTERY BONUS OVERLAY (logic unchanged) ── */
         .mystery-overlay {
             position: fixed; inset: 0; z-index: 999;
-            background: rgba(0,0,0,.75);
+            background: rgba(0,0,0,.8);
             display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
         }
-
         .mystery-popup {
-            background: var(--deep);
-            border: 1px solid var(--border);
-            border-radius: 20px;
+            background: linear-gradient(160deg, var(--panel), var(--deep));
+            border: 1.5px solid var(--border);
+            border-radius: 24px;
             padding: 2.5rem 2rem;
             text-align: center;
-            max-width: 360px;
-            width: 90%;
-            position: relative;
-            overflow: hidden;
+            max-width: 380px; width: 90%;
+            position: relative; overflow: hidden;
+            box-shadow: 0 30px 60px -20px rgba(0,0,0,0.7);
         }
-
         .mystery-popup::before {
             content: '';
             position: absolute; top: 0; left: 0; right: 0; height: 3px;
             background: linear-gradient(90deg, var(--gold), var(--orange));
         }
-
         .mystery-jackpot::before {
             background: linear-gradient(90deg, var(--gold), #ffe066, var(--gold));
+            background-size: 200% 100%;
             animation: shimmerBar 1.5s linear infinite;
         }
-
         @keyframes shimmerBar {
             0%   { background-position: -200% 0; }
             100% { background-position:  200% 0; }
         }
-
-        .mystery-icon { font-size: 3.5rem; margin-bottom: .8rem; animation: iconBob 1s ease-in-out infinite; }
-
+        .mystery-icon {
+            font-size: 3.5rem; margin-bottom: .8rem;
+            animation: iconBob 1s ease-in-out infinite;
+            display: block;
+        }
         @keyframes iconBob {
             0%,100% { transform: translateY(0) rotate(-5deg); }
             50%      { transform: translateY(-8px) rotate(5deg); }
         }
-
         .mystery-popup h2 {
             font-family: var(--font-display);
-            font-size: 1.8rem; color: var(--gold);
+            font-size: 2rem; color: var(--gold);
             text-shadow: 0 0 24px rgba(245,166,35,.5);
             margin-bottom: .4rem;
         }
-
         .mystery-popup p { font-size: .9rem; color: var(--muted); font-weight: 600; margin-bottom: .8rem; }
-
         .mystery-points {
             font-family: var(--font-display);
-            font-size: 1.4rem; color: var(--jade);
+            font-size: 1.6rem; color: var(--jade);
             text-shadow: 0 0 16px rgba(46,204,113,.5);
-            margin-bottom: 1rem;
+            margin-bottom: 1.2rem;
         }
-
         .mystery-jackpot .mystery-points { color: var(--gold); text-shadow: 0 0 20px rgba(245,166,35,.6); }
 
-        /* ── MAIN ── */
-        .main-container { max-width: 860px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+        /* ── LAYOUT ── */
+        .main-container { max-width: 900px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
 
-        /* ── SECTION LABEL ── */
+        /* ── SECTION EYEBROW ── */
         .section-label {
-            font-size: .7rem; font-weight: 800;
-            letter-spacing: .15em; text-transform: uppercase;
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 11px; font-weight: 800;
+            letter-spacing: .14em; text-transform: uppercase;
             color: var(--muted); margin-bottom: 1rem;
-            display: flex; align-items: center; gap: .6rem;
         }
-
-        .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); display: none; }
 
         /* ── AI NOTICE ── */
         .ai-notice {
             background: rgba(56,189,248,.08);
             border: 1px solid rgba(56,189,248,.25);
-            border-radius: 10px;
-            padding: .7rem 1rem;
+            border-radius: 12px; padding: .8rem 1rem;
             font-size: .82rem; font-weight: 700; color: var(--sky);
             margin-bottom: 1.2rem;
+            display: flex; align-items: center; gap: 8px;
         }
 
         /* ── FLASH ── */
         .alert {
-            border-radius: 10px; padding: .7rem 1rem;
+            border-radius: 12px; padding: .8rem 1rem;
             font-size: .82rem; font-weight: 700;
             margin-bottom: 1.2rem; border: 1px solid transparent;
         }
-
-        .alert.error, .alert.danger { background: rgba(255,107,53,.12); border-color: rgba(255,107,53,.35); color: var(--orange); }
+        .alert.error, .alert.danger { background: rgba(255,107,53,.1); border-color: rgba(255,107,53,.35); color: var(--orange); }
         .alert.success { background: rgba(46,204,113,.1); border-color: rgba(46,204,113,.3); color: var(--jade); }
         .alert.info    { background: rgba(56,189,248,.1); border-color: rgba(56,189,248,.3); color: var(--sky); }
 
         /* ── RECIPE HEADER CARD ── */
         .recipe-header {
-            background: var(--deep);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 1.8rem;
-            display: flex; gap: 1.5rem; align-items: flex-start;
+            background: linear-gradient(160deg, var(--panel), var(--deep));
+            border: 1.5px solid var(--border);
+            border-radius: 22px;
+            padding: 0;
             position: relative; overflow: hidden;
             margin-bottom: 1.2rem;
+            box-shadow: 0 20px 50px -20px rgba(0,0,0,.55);
         }
-
         .recipe-header::before {
             content: '';
             position: absolute; top: 0; left: 0; right: 0; height: 3px;
             background: linear-gradient(90deg, var(--gold), var(--orange));
+            z-index: 1;
+        }
+        /* corner rivets */
+        .recipe-header::after {
+            content: '';
+            position: absolute; top: 13px; right: 13px;
+            width: 6px; height: 6px;
+            border-radius: 50%; background: var(--border);
+        }
+
+        .recipe-header-image {
+            width: 100%;
+        }
+        .recipe-header-image img {
+            width: 100%; height: 240px;
+            object-fit: cover;
+            display: block;
             border-radius: 20px 20px 0 0;
         }
-
-        .recipe-header-icon {
-            font-size: 3.5rem;
-            filter: drop-shadow(0 4px 12px rgba(0,0,0,.5));
-            flex-shrink: 0;
+        .recipe-header-icon-wrap {
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; height: 140px;
+            font-size: 5rem;
+            filter: drop-shadow(0 4px 16px rgba(0,0,0,.5));
         }
-
-        .recipe-header-info { flex: 1; }
-
-        .recipe-header-info h1 {
+        .recipe-header-body {
+            padding: 1.8rem;
+        }
+        .recipe-header-body h1 {
             font-family: var(--font-display);
-            font-size: 1.9rem; color: var(--cream); line-height: 1.1;
-            margin-bottom: .4rem;
+            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            color: var(--cream); line-height: 1.1;
+            margin-bottom: .5rem;
         }
-
-        .recipe-header-info > p {
-            font-size: .88rem; color: var(--muted); font-weight: 600;
-            margin-bottom: 1rem; line-height: 1.5;
+        .recipe-header-body > p {
+            font-size: .9rem; color: var(--muted); font-weight: 600;
+            margin-bottom: 1.2rem; line-height: 1.6;
         }
-
         .recipe-header-meta {
-            display: flex; flex-wrap: wrap; gap: .45rem;
-            margin-bottom: 1.1rem;
+            display: flex; flex-wrap: wrap; gap: .5rem;
+            margin-bottom: 1.2rem;
         }
-
         .meta-pill {
-            display: inline-flex; align-items: center; gap: .25rem;
-            background: var(--panel); border: 1px solid var(--border);
-            border-radius: 6px; padding: .22rem .6rem;
-            font-size: .75rem; font-weight: 700; color: var(--muted);
+            display: inline-flex; align-items: center; gap: .3rem;
+            background: var(--night); border: 1px solid var(--border);
+            border-radius: 8px; padding: .28rem .7rem;
+            font-size: .76rem; font-weight: 700; color: var(--muted);
         }
-
-        .meta-pill.cost  { color: var(--gold);   border-color: rgba(245,166,35,.3);  background: rgba(245,166,35,.08); }
-        .meta-pill.cat   { color: var(--purple);  border-color: rgba(168,85,247,.3);  background: rgba(168,85,247,.08); }
+        .meta-pill.cost   { color: var(--gold);   border-color: rgba(245,166,35,.3);  background: rgba(245,166,35,.08); }
+        .meta-pill.cat    { color: var(--purple);  border-color: rgba(168,85,247,.3);  background: rgba(168,85,247,.08); }
 
         /* ── SERVING ADJUSTER ── */
         .serving-adjuster {
             display: inline-flex; align-items: center; gap: .6rem;
-            background: var(--panel); border: 1px solid var(--border);
-            border-radius: 10px; padding: .5rem .9rem;
+            background: var(--night); border: 1px solid var(--border);
+            border-radius: 12px; padding: .55rem 1rem;
         }
-
-        .serving-adjuster label {
-            font-size: .78rem; font-weight: 800; color: var(--muted);
-        }
-
+        .serving-adjuster label { font-size: .78rem; font-weight: 800; color: var(--muted); }
         .serving-btn {
             width: 28px; height: 28px;
-            background: var(--border); border: none;
-            border-radius: 6px; color: var(--cream);
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 7px; color: var(--cream);
             font-size: 1.1rem; cursor: pointer; line-height: 1;
-            transition: background .18s;
+            transition: background .15s, border-color .15s;
             display: flex; align-items: center; justify-content: center;
         }
-
-        .serving-btn:hover { background: var(--gold); color: var(--night); }
-
+        .serving-btn:hover { background: var(--gold); color: var(--night); border-color: var(--gold); }
         .serving-adjuster input {
-            width: 44px; background: var(--night);
-            border: 1px solid var(--border); border-radius: 6px;
+            width: 44px; background: var(--panel);
+            border: 1px solid var(--border); border-radius: 7px;
             color: var(--cream); font-family: var(--font-display);
-            font-size: 1rem; text-align: center; padding: .2rem;
+            font-size: 1rem; text-align: center; padding: .22rem;
             outline: none;
         }
 
         /* ── TAGS ── */
         .tags-row { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: 1.2rem; }
-
         .tag-pill {
             background: var(--panel); border: 1px solid var(--border);
-            border-radius: 99px; padding: .2rem .65rem;
+            border-radius: 999px; padding: .22rem .7rem;
             font-size: .72rem; font-weight: 700; color: var(--muted);
+            transition: border-color .15s, color .15s;
         }
+        .tag-pill:hover { color: var(--sky); border-color: rgba(56,189,248,.35); }
 
         /* ── RECIPE SECTIONS ── */
         .recipe-section {
-            background: var(--deep);
-            border: 1px solid var(--border);
-            border-radius: 16px; padding: 1.6rem;
+            background: linear-gradient(160deg, var(--panel), var(--deep));
+            border: 1.5px solid var(--border);
+            border-radius: 20px; padding: 1.8rem;
             margin-bottom: 1.1rem; position: relative; overflow: hidden;
+            transition: border-color .2s ease;
         }
-
         .recipe-section::before {
             content: '';
             position: absolute; top: 0; left: 0; right: 0; height: 3px;
             background: var(--section-accent, var(--sky));
-            border-radius: 16px 16px 0 0;
+            border-radius: 20px 20px 0 0;
         }
-
-        .recipe-section:nth-of-type(1) { --section-accent: var(--sky); }
-        .recipe-section:nth-of-type(2) { --section-accent: var(--jade); }
-        .recipe-section:nth-of-type(3) { --section-accent: var(--gold); }
+        /* assign accent per section type via modifier classes */
+        .recipe-section.ingredients  { --section-accent: var(--sky); }
+        .recipe-section.instructions { --section-accent: var(--jade); }
+        .recipe-section.tips         { --section-accent: var(--gold); background: rgba(245,166,35,.03); border-color: rgba(245,166,35,.2); }
 
         .recipe-section h2 {
             font-family: var(--font-display);
-            font-size: 1.15rem; color: var(--cream);
-            margin-bottom: 1.1rem;
+            font-size: 1.2rem; color: var(--cream);
+            margin-bottom: 1.2rem;
         }
 
         /* ── INGREDIENTS TABLE ── */
-        .ingredients-table {
-            width: 100%; border-collapse: collapse;
-            font-size: .88rem;
-        }
-
-        .ingredients-table thead tr {
-            border-bottom: 1px solid var(--border);
-        }
-
+        .ingredients-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+        .ingredients-table thead tr { border-bottom: 1px solid var(--border); }
         .ingredients-table th {
             text-align: left; padding: .5rem .7rem;
-            font-size: .7rem; font-weight: 800;
-            letter-spacing: .1em; text-transform: uppercase;
-            color: var(--muted);
+            font-size: .68rem; font-weight: 800;
+            letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
         }
-
         .ingredients-table tbody tr {
             border-bottom: 1px solid rgba(30,61,92,.5);
             transition: background .15s;
         }
-
-        .ingredients-table tbody tr:hover { background: rgba(22,45,71,.5); }
-
-        .ingredients-table td {
-            padding: .6rem .7rem; color: var(--cream); font-weight: 600;
-        }
-
+        .ingredients-table tbody tr:hover { background: rgba(22,45,71,.6); }
+        .ingredients-table td { padding: .65rem .7rem; color: var(--cream); font-weight: 600; }
         .ingredients-table tfoot tr { border-top: 1px solid var(--border); }
-
-        .ingredients-table tfoot td {
-            padding: .7rem; color: var(--gold); font-weight: 800;
-        }
-
+        .ingredients-table tfoot td { padding: .8rem .7rem; color: var(--gold); font-weight: 800; }
         .price { color: var(--jade) !important; font-weight: 700 !important; }
-
         .table-hint {
             font-size: .75rem; color: var(--muted); font-weight: 600;
-            margin-top: .7rem;
+            margin-top: .8rem; line-height: 1.5;
         }
 
         /* ── INSTRUCTIONS ── */
-        .instructions-list {
-            list-style: none; display: flex; flex-direction: column; gap: .8rem;
-        }
-
+        .instructions-list { list-style: none; display: flex; flex-direction: column; gap: 1rem; counter-reset: step; }
         .instructions-list li {
             display: flex; gap: 1rem; align-items: flex-start;
-            font-size: .88rem; font-weight: 600; color: var(--cream);
-            line-height: 1.6;
+            font-size: .9rem; font-weight: 600; color: var(--cream); line-height: 1.65;
+            counter-increment: step;
         }
-
         .instructions-list li::before {
             content: counter(step);
-            counter-increment: step;
-            min-width: 28px; height: 28px;
+            min-width: 30px; height: 30px;
             background: linear-gradient(135deg, var(--gold), var(--orange));
-            color: var(--night);
-            border-radius: 50%;
-            font-family: var(--font-display);
-            font-size: .85rem;
+            color: var(--night); border-radius: 50%;
+            font-family: var(--font-display); font-size: .85rem;
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0; margin-top: .1rem;
+            box-shadow: 0 4px 12px rgba(245,166,35,.25);
         }
 
-        .instructions-list { counter-reset: step; }
-
-        /* ── TIPS BOX ── */
-        .tips-box {
-            background: rgba(245,166,35,.05) !important;
-            border-color: rgba(245,166,35,.2) !important;
+        /* ── RATING SUMMARY BAR ── */
+        .rating-summary-bar {
+            background: linear-gradient(160deg, var(--panel), var(--deep));
+            border: 1.5px solid var(--border);
+            border-radius: 18px;
+            padding: 1.2rem 1.5rem;
+            display: flex; align-items: center;
+            justify-content: space-between;
+            gap: 16px; flex-wrap: wrap;
+            margin-bottom: 1.1rem;
+            position: relative; overflow: hidden;
+        }
+        .rating-summary-bar::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--orange));
+        }
+        .rating-summary-left {
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .rating-avg-number {
+            font-family: var(--font-display);
+            font-size: 2.2rem; color: var(--gold);
+            text-shadow: 0 0 20px rgba(245,166,35,.35);
+            line-height: 1;
+        }
+        .rating-stars-display { display: flex; gap: 3px; }
+        .star { font-size: 18px; }
+        .star.filled { color: var(--gold); text-shadow: 0 0 8px rgba(245,166,35,.5); }
+        .star.half   { color: var(--gold); opacity: 0.5; }
+        .star.empty  { color: var(--border); }
+        .rating-count {
+            font-size: .8rem; font-weight: 800; color: var(--muted);
+            background: var(--night); border: 1px solid var(--border);
+            padding: 3px 10px; border-radius: 999px;
+        }
+        .no-rating-yet {
+            font-size: .9rem; font-weight: 700; color: var(--muted);
         }
 
-        .tips-box p { font-size: .88rem; color: var(--muted); font-weight: 600; line-height: 1.6; }
+        /* ── RATING FORM SECTION ── */
+        .rating-form-section {
+            background: linear-gradient(160deg, var(--panel), var(--deep));
+            border: 1.5px solid var(--border);
+            border-radius: 20px; padding: 1.8rem;
+            margin-bottom: 1.1rem; position: relative; overflow: hidden;
+        }
+        .rating-form-section::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--purple);
+        }
+        .rating-form-section h3 {
+            font-family: var(--font-display);
+            font-size: 1.15rem; color: var(--cream); margin-bottom: 1.2rem;
+        }
+
+        /* Star selector — CSS-only interactive stars */
+        .star-selector {
+            display: flex; flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: 4px; margin-bottom: 12px;
+        }
+        .star-selector input[type="radio"] { display: none; }
+        .star-selector label {
+            font-size: 2rem; color: var(--border);
+            cursor: pointer;
+            transition: color .15s, transform .15s;
+        }
+        .star-selector label:hover,
+        .star-selector label:hover ~ label,
+        .star-selector input:checked ~ label { color: var(--gold); }
+        .star-selector label:hover { transform: scale(1.2); }
+
+        #ratingLabel {
+            font-size: .85rem; font-weight: 700;
+            color: var(--gold); margin-bottom: 14px;
+            height: 20px; min-height: 20px;
+        }
+
+        .rating-form-section label.field-label {
+            display: block;
+            font-size: .8rem; font-weight: 800;
+            color: var(--muted); text-transform: uppercase;
+            letter-spacing: .08em; margin-bottom: 7px;
+        }
+        .rating-form-section textarea {
+            width: 100%; padding: 12px 14px;
+            background: var(--night); border: 1.5px solid var(--border);
+            border-radius: 12px; color: var(--cream);
+            font-family: var(--font-body); font-size: .9rem; font-weight: 600;
+            resize: none; outline: none;
+            transition: border-color .18s, box-shadow .18s;
+            margin-bottom: 14px;
+        }
+        .rating-form-section textarea::placeholder { color: var(--muted); opacity: .7; }
+        .rating-form-section textarea:focus {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 3px rgba(168,85,247,.15);
+        }
+        .rating-form-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
         /* ── ACTION SECTION ── */
         .recipe-actions {
-            background: var(--deep);
-            border: 1px solid var(--border);
-            border-radius: 16px; padding: 1.6rem;
-            margin-top: 1.2rem; display: flex;
-            flex-direction: column; gap: .85rem;
+            background: linear-gradient(160deg, var(--panel), var(--deep));
+            border: 1.5px solid var(--border);
+            border-radius: 20px; padding: 1.8rem;
+            margin-top: 1.1rem;
+            display: flex; flex-direction: column; gap: .85rem;
+            position: relative; overflow: hidden;
         }
-
         .recipe-actions::before {
             content: '';
-            position: absolute; display: none;
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--jade), var(--sky));
+        }
+        .actions-title {
+            font-family: var(--font-display);
+            font-size: 1.1rem; color: var(--cream); margin-bottom: .2rem;
         }
 
-        /* evidence pending */
+        /* ── EVIDENCE PENDING ── */
         .evidence-pending-box {
             background: rgba(56,189,248,.07);
             border: 1px solid rgba(56,189,248,.25);
-            border-radius: 12px; padding: 1rem 1.2rem;
+            border-radius: 14px; padding: 1rem 1.2rem;
             font-size: .85rem; font-weight: 700; color: var(--sky);
         }
-
         .evidence-pending-box img {
             max-width: 200px; border-radius: 10px;
             border: 2px solid rgba(56,189,248,.3);
             margin-top: .7rem; display: block;
         }
 
-        /* evidence form */
+        /* ── EVIDENCE FORM ── */
         .evidence-form-box {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 14px; padding: 1.3rem;
+            background: var(--night);
+            border: 1.5px solid var(--border);
+            border-radius: 16px; padding: 1.4rem;
         }
-
         .evidence-form-box h4 {
             font-family: var(--font-display);
-            font-size: 1rem; color: var(--cream); margin-bottom: .3rem;
+            font-size: 1rem; color: var(--cream); margin-bottom: .4rem;
         }
-
-        .evidence-form-box p {
-            font-size: .78rem; color: var(--muted); font-weight: 600; margin-bottom: .9rem;
+        .evidence-form-box > p {
+            font-size: .78rem; color: var(--muted); font-weight: 600; margin-bottom: 1rem;
         }
-
         .evidence-form-box select {
-            width: 100%; background: var(--deep);
-            border: 1px solid var(--border); border-radius: 8px;
-            padding: .65rem .9rem; color: var(--cream);
+            width: 100%; background: var(--panel);
+            border: 1.5px solid var(--border); border-radius: 10px;
+            padding: .7rem 1rem; color: var(--cream);
             font-family: var(--font-body); font-size: .85rem; font-weight: 600;
-            outline: none; margin-bottom: .85rem;
+            outline: none; margin-bottom: .9rem;
             transition: border-color .2s;
+            appearance: none;
+            background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+                              linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+            background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+            background-size: 5px 5px, 5px 5px;
+            background-repeat: no-repeat;
         }
-
-        .evidence-form-box select:focus { border-color: var(--gold); }
-
+        .evidence-form-box select:focus { border-color: var(--sky); }
         .evidence-form-box select option { background: var(--panel); }
 
-        /* action buttons */
-        .btn-cooked {
-            width: 100%; background: linear-gradient(135deg, var(--jade), #00d084);
-            color: var(--night); border: none; border-radius: 10px;
-            padding: .85rem; font-family: var(--font-display);
-            font-size: 1rem; letter-spacing: .04em; cursor: pointer;
-            transition: transform .18s, box-shadow .18s, filter .18s;
-            box-shadow: 0 4px 18px rgba(46,204,113,.25);
+        .share-label {
+            font-size: .72rem; font-weight: 800;
+            letter-spacing: .1em; text-transform: uppercase;
+            color: var(--muted); margin-bottom: .5rem; display: block;
         }
 
-        .btn-cooked:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(46,204,113,.4); filter: brightness(1.08); }
+        #evidencePreviewContainer img {
+            max-width: 100%; max-height: 260px;
+            border-radius: 12px; border: 2px solid var(--border);
+            object-fit: cover; display: block;
+        }
+        .remove-evidence-btn {
+            background: none; border: none;
+            color: var(--orange); cursor: pointer;
+            font-size: .8rem; font-weight: 800;
+            margin-top: .5rem;
+        }
+
+        /* ── BUTTONS ── */
+        .btn-cooked {
+            width: 100%;
+            background: linear-gradient(135deg, var(--jade), #00d084);
+            color: var(--night); border: none; border-radius: 12px;
+            padding: .9rem; font-family: var(--font-display);
+            font-size: 1rem; letter-spacing: .04em; cursor: pointer;
+            transition: transform .15s, box-shadow .15s;
+            box-shadow: 0 6px 0 -2px rgba(0,0,0,.25), 0 10px 24px -8px rgba(46,204,113,.4);
+        }
+        .btn-cooked:hover { transform: translateY(-2px); box-shadow: 0 8px 0 -2px rgba(0,0,0,.25), 0 14px 28px -8px rgba(46,204,113,.5); }
+        .btn-cooked:active { transform: translateY(2px); box-shadow: 0 2px 0 -2px rgba(0,0,0,.25); }
 
         .btn-favorite {
-            width: 100%; background: var(--panel);
-            border: 1px solid rgba(255,107,53,.4); color: var(--orange);
-            border-radius: 10px; padding: .75rem;
+            width: 100%; background: var(--night);
+            border: 1.5px solid rgba(255,107,53,.4); color: var(--orange);
+            border-radius: 12px; padding: .8rem;
             font-family: var(--font-body); font-size: .9rem; font-weight: 800;
-            cursor: pointer; transition: background .2s, transform .18s;
+            cursor: pointer; transition: background .18s, transform .15s, border-color .15s;
         }
-
-        .btn-favorite:hover { background: rgba(255,107,53,.1); transform: translateY(-1px); }
+        .btn-favorite:hover { background: rgba(255,107,53,.1); border-color: var(--orange); transform: translateY(-1px); }
 
         .btn-share {
             display: block; text-align: center; width: 100%;
             background: linear-gradient(135deg, var(--purple), #9333ea);
             color: var(--cream); text-decoration: none;
-            border-radius: 10px; padding: .75rem;
+            border-radius: 12px; padding: .8rem;
             font-family: var(--font-display); font-size: .95rem;
-            transition: transform .18s, filter .18s;
-            box-shadow: 0 4px 16px rgba(168,85,247,.2);
+            transition: transform .15s, filter .15s;
+            box-shadow: 0 6px 0 -2px rgba(0,0,0,.25), 0 10px 22px -8px rgba(168,85,247,.35);
         }
-
-        .btn-share:hover { transform: translateY(-1px); filter: brightness(1.1); }
+        .btn-share:hover { transform: translateY(-2px); filter: brightness(1.1); }
 
         .btn-secondary {
             display: block; text-align: center; width: 100%;
-            background: transparent; border: 1px solid var(--border);
+            background: var(--night); border: 1.5px solid var(--border);
             color: var(--muted); text-decoration: none;
-            border-radius: 10px; padding: .7rem;
+            border-radius: 12px; padding: .75rem;
             font-family: var(--font-body); font-size: .85rem; font-weight: 800;
-            transition: border-color .2s, color .2s;
+            transition: border-color .18s, color .18s;
         }
+        .btn-secondary:hover { border-color: var(--muted); color: var(--cream); }
 
-        .btn-secondary:hover { border-color: var(--cream); color: var(--cream); }
-
-        .btn-upload-row {
-            display: flex; gap: .7rem; margin-bottom: .85rem;
-        }
-
+        .btn-upload-row { display: flex; gap: .7rem; margin-bottom: .9rem; }
         .btn-upload {
-            flex: 1; background: var(--deep);
-            border: 1px solid var(--border); color: var(--cream);
-            border-radius: 8px; padding: .65rem;
+            flex: 1; background: var(--panel);
+            border: 1.5px solid var(--border); color: var(--cream);
+            border-radius: 10px; padding: .7rem;
             font-family: var(--font-body); font-size: .82rem; font-weight: 700;
-            cursor: pointer; transition: border-color .2s;
+            cursor: pointer; transition: border-color .18s, background .18s;
         }
+        .btn-upload:hover { border-color: var(--sky); background: rgba(56,189,248,.06); }
 
-        .btn-upload:hover { border-color: var(--sky); }
-
-        /* share label */
-        .share-label {
-            font-size: .72rem; font-weight: 800;
-            letter-spacing: .1em; text-transform: uppercase;
-            color: var(--muted); margin-bottom: .4rem; display: block;
+        /* Rating submit / delete */
+        .btn {
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            color: var(--night); border: none; border-radius: 10px;
+            padding: .75rem 1.4rem;
+            font-family: var(--font-display); font-size: .95rem;
+            cursor: pointer;
+            box-shadow: 0 5px 0 -2px rgba(0,0,0,.25), 0 8px 20px -8px rgba(245,166,35,.4);
+            transition: transform .12s, box-shadow .12s;
         }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 -2px rgba(0,0,0,.25), 0 12px 24px -8px rgba(245,166,35,.5); }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 -2px rgba(0,0,0,.25); }
 
-        /* evidence preview */
-        #evidencePreviewContainer img {
-            max-width: 100%; max-height: 260px;
-            border-radius: 10px; border: 2px solid var(--border);
-            object-fit: cover; display: block;
+        .btn-delete {
+            background: rgba(255,107,53,.12);
+            color: var(--orange); border: 1.5px solid rgba(255,107,53,.35);
+            border-radius: 10px; padding: .75rem 1.2rem;
+            font-family: var(--font-body); font-size: .85rem; font-weight: 800;
+            cursor: pointer; transition: background .15s;
         }
+        .btn-delete:hover { background: rgba(255,107,53,.2); }
 
-        .remove-evidence-btn {
-            background: none; border: none;
-            color: var(--orange); cursor: pointer;
-            font-size: .8rem; font-weight: 700;
-            margin-top: .4rem;
-        }
-
-        /* ── BADGE ITEM ── */
-        .badge-item {
-            background: var(--panel); border: 1px solid var(--border);
-            border-radius: 99px; padding: .2rem .65rem;
-            font-size: .72rem; font-weight: 700; color: var(--muted);
-        }
-
-        /* ── AWESOME BUTTON (mystery) ── */
+        /* Mystery btn */
         .btn-awesome {
             margin-top: 1rem; width: 100%;
             background: linear-gradient(135deg, var(--gold), var(--orange));
-            color: var(--night); border: none; border-radius: 10px;
-            padding: .8rem; font-family: var(--font-display);
+            color: var(--night); border: none; border-radius: 12px;
+            padding: .85rem; font-family: var(--font-display);
             font-size: 1rem; cursor: pointer;
-            transition: transform .18s; box-shadow: 0 4px 18px rgba(245,166,35,.3);
+            transition: transform .15s;
+            box-shadow: 0 6px 0 -2px rgba(0,0,0,.25), 0 10px 24px -8px rgba(245,166,35,.4);
         }
-
         .btn-awesome:hover { transform: translateY(-2px); }
+
+        /* ── DIVIDER ── */
+        .section-divider {
+            display: flex; align-items: center; gap: 12px;
+            margin: 1.6rem 0 1.2rem;
+        }
+        .section-divider span {
+            font-family: var(--font-display);
+            font-size: 13px; color: var(--muted); white-space: nowrap;
+        }
+        .section-divider::before,
+        .section-divider::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
+        }
 
         /* ── RESPONSIVE ── */
         @media (max-width: 600px) {
-            .recipe-header { flex-direction: column; }
-            .main-container { padding: 1.5rem 1rem 3rem; }
+            .main-container { padding: 1.5rem 1rem 3.5rem; }
+            .recipe-header-body { padding: 1.2rem; }
+            .rating-summary-bar { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
 
-    <!-- MYSTERY BONUS OVERLAY -->
+    <!-- MYSTERY BONUS OVERLAY — logic untouched -->
     {% if mystery_bonus %}
     <div id="mysteryBonusOverlay" class="mystery-overlay">
         <div class="mystery-popup {% if mystery_bonus.type == 'jackpot' %}mystery-jackpot{% endif %}">
             {% if mystery_bonus.type == "jackpot" %}
-                <div class="mystery-icon">🎰</div>
+                <span class="mystery-icon">🎰</span>
                 <h2>JACKPOT!</h2>
                 <p>Lucky you! Your points were doubled!</p>
                 <div class="mystery-points">+{{ mystery_bonus.amount }} bonus points!</div>
             {% else %}
-                <div class="mystery-icon">🎁</div>
+                <span class="mystery-icon">🎁</span>
                 <h2>Surprise Bonus!</h2>
                 <p>You found a mystery reward while cooking!</p>
                 <div class="mystery-points">+{{ mystery_bonus.amount }} bonus points!</div>
@@ -541,22 +631,7 @@
     {% endif %}
 
     <!-- NAVBAR -->
-    <nav class="navbar">
-        <div class="nav-brand">
-            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Hapag">
-            Hapag
-        </div>
-        <div class="nav-links">
-            <a href="{{ url_for('dashboard') }}">Home</a>
-            <a href="{{ url_for('recommend') }}">Recipes</a>
-            <a href="{{ url_for('challenges') }}">Challenges</a>
-            <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
-            <a href="{{ url_for('community') }}">Community</a>
-            <a href="{{ url_for('cookbook') }}">Cookbook</a>
-            <a href="{{ url_for('profile') }}">Profile</a>
-            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
-        </div>
-    </nav>
+    {% include 'navbar.html' %}
 
     <div class="main-container">
 
@@ -567,26 +642,23 @@
         </div>
         {% endif %}
 
-        <!-- FLASH -->
+        <!-- FLASH MESSAGES -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category, message in messages %}
                 <div class="alert {{ category }}">{{ message }}</div>
             {% endfor %}
         {% endwith %}
 
-        <!-- RECIPE HEADER -->
-        <!-- RECIPE HEADER -->
-<div class="recipe-header">
-    <div class="recipe-header-image">
-        {% if recipe_image %}
-            <img src="{{ recipe_image }}" alt="{{ recipe.name }}"
-                 style="width:100%; height:220px; object-fit:cover;
-                        border-radius:12px;">
-        {% else %}
-            <div class="recipe-header-icon">🍲</div>
-        {% endif %}
-    </div>
-    <div class="recipe-header-info">
+        <!-- RECIPE HEADER CARD -->
+        <div class="recipe-header">
+            <div class="recipe-header-image">
+                {% if recipe_image %}
+                    <img src="{{ recipe_image }}" alt="{{ recipe.name }}">
+                {% else %}
+                    <div class="recipe-header-icon-wrap">🍲</div>
+                {% endif %}
+            </div>
+            <div class="recipe-header-body">
                 <h1>{{ recipe.name }}</h1>
                 <p>{{ recipe.description }}</p>
 
@@ -619,7 +691,7 @@
         {% endif %}
 
         <!-- INGREDIENTS -->
-        <div class="recipe-section">
+        <div class="recipe-section ingredients">
             <h2>🛒 Ingredients &amp; Estimated Costs</h2>
             <table class="ingredients-table">
                 <thead>
@@ -630,17 +702,20 @@
                     </tr>
                 </thead>
                 <tbody id="ingredientsBody">
-                    {% for ingredient in recipe.ingredients %}
-                    <tr>
-                        <td>{{ ingredient.name }}</td>
-                        <td class="ingredient-qty">{{ ingredient.quantity }}</td>
-                        <td class="price ingredient-price"
-                            data-base-price="{% set digits = ingredient.estimated_price | replace('₱','') | replace(',','') %}{{ digits | int if digits else 0 }}">
-                            {{ ingredient.estimated_price }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+    {% for ingredient in recipe.ingredients %}
+    <tr>
+        <td>{{ ingredient.name }}</td>
+        <td class="ingredient-qty"
+            data-base-qty="{{ ingredient.quantity }}">
+            {{ ingredient.quantity }}
+        </td>
+        <td class="price ingredient-price"
+            data-base-price="{% set digits = ingredient.estimated_price | replace('₱','') | replace(',','') %}{{ digits | int if digits else 0 }}">
+            {{ ingredient.estimated_price }}
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
                 <tfoot>
                     <tr>
                         <td colspan="2"><strong>Total Estimated Cost</strong></td>
@@ -652,7 +727,7 @@
         </div>
 
         <!-- INSTRUCTIONS -->
-        <div class="recipe-section">
+        <div class="recipe-section instructions">
             <h2>👨‍🍳 Cooking Instructions</h2>
             <ol class="instructions-list">
                 {% for step in recipe.instructions %}
@@ -663,18 +738,85 @@
 
         <!-- TIPS -->
         {% if recipe.tips %}
-        <div class="recipe-section tips-box">
+        <div class="recipe-section tips">
             <h2>💡 Cooking Tips</h2>
-            <p>{{ recipe.tips }}</p>
+            <p style="font-size:.9rem; color:var(--muted); font-weight:600; line-height:1.65;">{{ recipe.tips }}</p>
         </div>
         {% endif %}
 
-        <!-- ACTIONS -->
-        <div class="section-label" style="margin-top: 1.5rem;">Actions</div>
+        <!-- RATING SUMMARY BAR -->
+        <div class="rating-summary-bar">
+            <div class="rating-summary-left">
+                {% if avg_rating > 0 %}
+                    <span class="rating-avg-number">{{ avg_rating }}</span>
+                    <div class="rating-stars-display">
+                        {% for i in range(1, 6) %}
+                            {% if i <= avg_rating %}
+                                <span class="star filled">★</span>
+                            {% elif i - 0.5 <= avg_rating %}
+                                <span class="star half">★</span>
+                            {% else %}
+                                <span class="star empty">★</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="rating-count">{{ total_ratings }} review{{ 's' if total_ratings != 1 else '' }}</span>
+                {% else %}
+                    <span class="no-rating-yet">⭐ No ratings yet — be the first!</span>
+                {% endif %}
+            </div>
+            <a href="{{ url_for('recipe_ratings', recipe_name=recipe.name) }}"
+               class="btn-secondary" style="width:auto; padding:8px 18px; white-space:nowrap;">
+                📋 View All Reviews
+            </a>
+        </div>
 
+        <!-- RATE THIS RECIPE -->
+        <div class="rating-form-section">
+            <h3>{% if user_rating %}✏️ Update Your Rating{% else %}⭐ Rate This Recipe{% endif %}</h3>
+
+            <form method="POST" action="{{ url_for('rate_recipe', recipe_name=recipe.name) }}">
+                <div class="star-selector">
+                    {% for i in range(5, 0, -1) %}
+                    <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}"
+                           {% if user_rating and user_rating.rating == i %}checked{% endif %}>
+                    <label for="star{{ i }}" title="{{ i }} star{{ 's' if i > 1 else '' }}">★</label>
+                    {% endfor %}
+                </div>
+
+                <div id="ratingLabel">
+                    {% if user_rating %}
+                        {% set labels = {1: "Poor 😞", 2: "Fair 😐", 3: "Good 😊", 4: "Great 😄", 5: "Amazing! 🤩"} %}
+                        {{ labels[user_rating.rating] }}
+                    {% endif %}
+                </div>
+
+                <label class="field-label">Write a review (optional)</label>
+                <textarea name="review" rows="3"
+                          placeholder="Share your experience cooking this dish...">{% if user_rating %}{{ user_rating.review }}{% endif %}</textarea>
+
+                <div class="rating-form-row">
+                    <button type="submit" class="btn">
+                        {% if user_rating %}💾 Update Rating{% else %}⭐ Submit Rating{% endif %}
+                    </button>
+                    {% if user_rating %}
+                    <form method="POST"
+                          action="{{ url_for('delete_rating', recipe_name=recipe.name) }}"
+                          onsubmit="return confirm('Remove your rating?')"
+                          style="display:inline;">
+                        <button type="submit" class="btn-delete" style="padding:10px 16px;">
+                            🗑️ Remove
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <!-- ACTION BUTTONS -->
         <div class="recipe-actions">
+            <span class="actions-title">⚡ Actions</span>
 
-            <!-- EVIDENCE -->
             {% set pending = pending_submission %}
             {% set already_cooked = already_cooked_today %}
 
@@ -746,39 +888,127 @@
 
             <!-- BACK -->
             <a href="{{ url_for('recommend') }}" class="btn-secondary">🔄 Find More Recipes</a>
-
         </div>
 
     </div>
 
     <script>
-        const baseServings = {{ recipe.servings | int(1) }};
+       const baseServings = {{ recipe.servings | int(1) }};
+const userHouseholdSize = {{ household_size }};
 
-        function changeServings(delta) {
-            const input = document.getElementById('servingsInput');
-            let newValue = parseInt(input.value) + delta;
-            if (newValue < 1) newValue = 1;
-            input.value = newValue;
-            recalculateCosts();
+function changeServings(delta) {
+    const input = document.getElementById('servingsInput');
+    let newValue = parseInt(input.value) + delta;
+    if (newValue < 1) newValue = 1;
+    input.value = newValue;
+    recalculateCosts();
+}
+
+/**
+ * Parses a quantity string like "1/2 kilo", "2 cloves", "1 tablespoon"
+ * Returns { value: number, unit: string }
+ */
+function parseQuantity(qtyStr) {
+    if (!qtyStr) return { value: null, unit: qtyStr };
+
+    qtyStr = qtyStr.trim();
+
+    // Match fraction like "1/2" or "3/4" at the start
+    const fractionMatch = qtyStr.match(/^(\d+)\/(\d+)(.*)/);
+    if (fractionMatch) {
+        const value = parseInt(fractionMatch[1]) / parseInt(fractionMatch[2]);
+        const unit = fractionMatch[3].trim();
+        return { value, unit };
+    }
+
+    // Match decimal or whole number at the start like "1.5" or "2"
+    const numberMatch = qtyStr.match(/^(\d+\.?\d*)(.*)/);
+    if (numberMatch) {
+        const value = parseFloat(numberMatch[1]);
+        const unit = numberMatch[2].trim();
+        return { value, unit };
+    }
+
+    // No number found — quantity is text only (e.g. "to taste", "as needed")
+    return { value: null, unit: qtyStr };
+}
+
+/**
+ * Formats a scaled number back into a readable quantity string.
+ * e.g. 0.5 → "1/2", 1.25 → "1 1/4", 3 → "3"
+ */
+function formatQuantity(num) {
+    if (num === null) return null;
+
+    // Common fraction mappings
+    const fractions = [
+        { decimal: 0.25, str: "1/4" },
+        { decimal: 0.33, str: "1/3" },
+        { decimal: 0.5,  str: "1/2" },
+        { decimal: 0.67, str: "2/3" },
+        { decimal: 0.75, str: "3/4" },
+    ];
+
+    const whole = Math.floor(num);
+    const decimal = parseFloat((num - whole).toFixed(2));
+
+    // Check if decimal part matches a known fraction
+    const match = fractions.find(f => Math.abs(f.decimal - decimal) < 0.04);
+
+    if (decimal === 0) {
+        return `${whole}`;
+    } else if (match) {
+        return whole > 0 ? `${whole} ${match.str}` : match.str;
+    } else {
+        // Round to 1 decimal place for anything else
+        return parseFloat(num.toFixed(1)).toString();
+    }
+}
+
+function recalculateCosts() {
+    const currentServings = parseInt(document.getElementById('servingsInput').value) || baseServings;
+    const safeBaseServings = baseServings > 0 ? baseServings : 1;
+    const ratio = currentServings / safeBaseServings;
+
+    // ── SCALE PRICES ──
+    const priceCells = document.querySelectorAll('.ingredient-price');
+    let total = 0;
+
+    priceCells.forEach(cell => {
+        const basePrice = parseFloat(cell.getAttribute('data-base-price')) || 0;
+        const newPrice = Math.round(basePrice * ratio);
+        cell.textContent = `₱${newPrice}`;
+        total += newPrice;
+    });
+
+    document.getElementById('tableTotalCost').textContent = `₱${total}`;
+    document.getElementById('totalCostDisplay').textContent = `💰 ₱${total}`;
+
+    // ── SCALE QUANTITIES ──
+    const qtyCells = document.querySelectorAll('.ingredient-qty');
+
+    qtyCells.forEach(cell => {
+        const baseQtyStr = cell.getAttribute('data-base-qty');
+        if (!baseQtyStr) return;
+
+        const parsed = parseQuantity(baseQtyStr);
+
+        if (parsed.value === null) {
+            // Text-only quantity like "to taste" — don't scale, leave as is
+            cell.textContent = baseQtyStr;
+            return;
         }
 
-        window.addEventListener('DOMContentLoaded', recalculateCosts);
+        const scaledValue = parsed.value * ratio;
+        const formattedValue = formatQuantity(scaledValue);
+        cell.textContent = parsed.unit
+            ? `${formattedValue} ${parsed.unit}`
+            : formattedValue;
+    });
+}
 
-        function recalculateCosts() {
-            const currentServings = parseInt(document.getElementById('servingsInput').value) || baseServings;
-            const safeBaseServings = baseServings > 0 ? baseServings : 1;
-            const ratio = currentServings / safeBaseServings;
-            const priceCells = document.querySelectorAll('.ingredient-price');
-            let total = 0;
-            priceCells.forEach(cell => {
-                const basePrice = parseFloat(cell.getAttribute('data-base-price')) || 0;
-                const newPrice = Math.round(basePrice * ratio);
-                cell.textContent = `₱${newPrice}`;
-                total += newPrice;
-            });
-            document.getElementById('tableTotalCost').textContent = `₱${total}`;
-            document.getElementById('totalCostDisplay').textContent = `💰 ₱${total}`;
-        }
+// Run once on page load to scale to user's household size
+window.addEventListener('DOMContentLoaded', recalculateCosts);
 
         function closeMysteryBonus() {
             const overlay = document.getElementById('mysteryBonusOverlay');
@@ -825,6 +1055,22 @@
             document.getElementById('evidencePreview').src = '';
             document.getElementById('evidencePreviewContainer').style.display = 'none';
         }
+    </script>
+
+    <script>
+        const ratingLabels = {
+            1: "Poor 😞",
+            2: "Fair 😐",
+            3: "Good 😊",
+            4: "Great 😄",
+            5: "Amazing! 🤩"
+        };
+        document.querySelectorAll('.star-selector input').forEach(input => {
+            input.addEventListener('change', function() {
+                const label = document.getElementById('ratingLabel');
+                if (label) label.textContent = ratingLabels[this.value] || '';
+            });
+        });
     </script>
 
 </body>

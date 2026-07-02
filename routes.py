@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, request, flash, session
+from flask import render_template, redirect, url_for, request, flash, session, jsonify
 from app import app, db
 from flask_login import login_user, logout_user, login_required, current_user, UserMixin
 from flask_bcrypt import Bcrypt
@@ -89,7 +89,19 @@ def get_recipe_image(recipe_name, category=""):
 # HOME
 # ─────────────────────────────────────────────
 from datetime import datetime, timedelta
- 
+
+def log_activity(action_type, username, details=""):
+    """Records a user activity event for admin statistics."""
+    try:
+        db.activity_logs.insert_one({
+            "action_type": action_type,
+            "username": username,
+            "details": details,
+            "timestamp": datetime.now(),
+            "date": datetime.now().strftime("%Y-%m-%d")
+        })
+    except Exception as e:
+        print(f"Activity log error: {e}") 
  
 def get_activity_stats():
     """Computes the activity-statistics block shared by the admin dashboard
@@ -351,7 +363,10 @@ def get_user_challenge_progress(user_id, challenges):
 
 @app.route("/")
 def home():
-    return redirect(url_for("login"))
+    # If already logged in, go straight to dashboard
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard"))
+    return render_template("landing.html")
 
 # ─────────────────────────────────────────────
 # REGISTER
@@ -805,6 +820,28 @@ Respond ONLY in JSON, no extra text:
     # Store full recipe data so recipe_detail can reuse it instead of regenerating
     session["last_search_recipes"] = all_recipes
 
+    # Fetch real ratings for each recipe
+    # Fetch images for each recipe card
+    for r in all_recipes:
+        r["card_image"] = get_recipe_image(r.get("name", ""), r.get("category", ""))
+
+    # ── FETCH REAL RATINGS ── (must be before session store)
+    for r in all_recipes:
+        name_key = r.get("name", "").lower().strip()
+        ratings_cursor = list(db.recipe_ratings.find({"recipe_name": name_key}))
+        if ratings_cursor:
+            r["avg_rating"] = round(
+                sum(rt["rating"] for rt in ratings_cursor) / len(ratings_cursor), 1
+            )
+            r["total_ratings"] = len(ratings_cursor)
+        else:
+            r["avg_rating"] = 0
+            r["total_ratings"] = 0
+        print(f"RATING CHECK: '{name_key}' → {r['total_ratings']} ratings")
+
+    # Store AFTER ratings are added
+    session["last_search_recipes"] = all_recipes
+
     return render_template("recommend_results.html",
                            recipes=all_recipes,
                            budget=budget,
@@ -958,13 +995,27 @@ Respond ONLY in this exact JSON format, no extra text:
         recipe.get("category", "")
     )
 
+    # Get ratings for this recipe
+    all_ratings = list(db.recipe_ratings.find({"recipe_name": recipe_name.lower()}))
+    total_ratings = len(all_ratings)
+    avg_rating = round(sum(r["rating"] for r in all_ratings) / total_ratings, 1) if total_ratings > 0 else 0
+
+    # Check if current user already rated
+    user_rating = db.recipe_ratings.find_one({
+        "recipe_name": recipe_name.lower(),
+        "user_id": current_user.id
+    })
+
     return render_template("recipe_detail.html",
                            recipe=recipe,
                            source=source,
                            recipe_name=recipe_name,
                            household_size=household_size,
                            mystery_bonus=session.pop("mystery_bonus", None),
-                           recipe_image=recipe_image)
+                           recipe_image=recipe_image,
+                           avg_rating=avg_rating,
+                           total_ratings=total_ratings,
+                           user_rating=user_rating)
 # ─────────────────────────────────────────────
 # MARK RECIPE AS COOKED
 # ─────────────────────────────────────────────
@@ -989,6 +1040,26 @@ def mark_cooked(recipe_name):
             "date": datetime.now().strftime("%Y-%m-%d %H:%M")
         }}}
     )
+    # Check if user entered top 3 on weekly leaderboard
+    week_id = get_current_week_id()
+    pipeline = [
+        {"$match": {"week_id": week_id}},
+        {"$group": {"_id": "$username", "total": {"$sum": "$points_earned"}}},
+        {"$sort": {"total": -1}},
+        {"$limit": 3}
+    ]
+    top3 = list(db.points_log.aggregate(pipeline))
+    top3_names = [r["_id"] for r in top3]
+
+    if current_user.username in top3_names:
+        rank = top3_names.index(current_user.username) + 1
+        medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+        create_notification(
+            current_user.id,
+            "leaderboard",
+            f"{medals[rank]} You're #{rank} on this week's leaderboard!",
+            "/leaderboard?view=weekly"
+        )
 
     log_activity("cooked", current_user.username, recipe_name)
 
@@ -1031,25 +1102,31 @@ def mark_cooked(recipe_name):
     new_badges = user_data.get("badges", [])
 
     # Badge: First Recipe Cooked
+    # Badge: First Recipe Cooked
     if len(cooking_history) == 0 and "🥄 First Cook" not in new_badges:
         new_badges.append("🥄 First Cook")
         flash("🎉 Badge Unlocked: First Cook!", "success")
+        create_notification(current_user.id, "badge",
+            "🥄 Badge Unlocked: First Cook! Keep cooking!", "/profile")
 
-    # Badge: Rising Chef (reach 100 points)
     if new_points >= 100 and "⭐ Rising Chef" not in new_badges:
         new_badges.append("⭐ Rising Chef")
         flash("🎉 Badge Unlocked: Rising Chef!", "success")
+        create_notification(current_user.id, "badge",
+            "⭐ Badge Unlocked: Rising Chef! You reached 100 points!", "/profile")
 
-    # Badge: Adobo Expert (cook 3 adobo recipes)
     adobo_count = sum(1 for h in cooking_history if "adobo" in h["name"].lower())
     if adobo_count >= 2 and "🍗 Adobo Expert" not in new_badges:
         new_badges.append("🍗 Adobo Expert")
         flash("🎉 Badge Unlocked: Adobo Expert!", "success")
+        create_notification(current_user.id, "badge",
+            "🍗 Badge Unlocked: Adobo Expert! You love Adobo!", "/profile")
 
-    # Badge: Budget Master (cook 5 recipes total)
     if len(cooking_history) >= 4 and "💰 Budget Master" not in new_badges:
         new_badges.append("💰 Budget Master")
         flash("🎉 Badge Unlocked: Budget Master!", "success")
+        create_notification(current_user.id, "badge",
+            "💰 Badge Unlocked: Budget Master! 5 recipes cooked!", "/profile")
 
     # Save updated points, level, badges
     db.users.update_one(
@@ -1175,6 +1252,11 @@ def admin_required(f):
 @login_required
 @admin_required
 def admin_dashboard():
+    create_notification_for_all_admins(
+        "admin_access",
+        f"🔐 {current_user.username} accessed the Admin Panel",
+        "/admin"
+    )
     total_users = db.users.count_documents({})
     total_recipes = db.recipes.count_documents({})
     recent_users = list(db.users.find().sort("_id", -1).limit(5))
@@ -2211,6 +2293,15 @@ def join_household():
 
     flash(f"You joined '{household['name']}'! Welcome to the household!", "success")
     log_activity("household_join", current_user.username, household["name"])
+
+    # Notify household owner
+    create_notification(
+        household["owner_id"],
+        "household_join",
+        f"🏠 {current_user.username} joined your household '{household['name']}'!",
+        "/household"
+    )
+
     return redirect(url_for("household"))
 
 
@@ -2428,6 +2519,14 @@ def like_post(post_id):
             {"_id": ObjectId(post_id)},
             {"$push": {"likes": current_user.username}}
         )
+        # Notify post owner (don't notify yourself)
+        if post["user_id"] != current_user.id:
+            create_notification(
+                post["user_id"],
+                "like",
+                f"❤️ {current_user.username} liked your post!",
+                f"/community/post/{post_id}/comments"
+            )
 
     # Return to wherever the user came from
     referrer = request.referrer
@@ -2497,6 +2596,16 @@ def add_comment(post_id):
         "content": content,
         "created_at": datetime.now()
     })
+
+    # Notify post owner
+    post = db.community_posts.find_one({"_id": ObjectId(post_id)})
+    if post and post["user_id"] != current_user.id:
+        create_notification(
+            post["user_id"],
+            "comment",
+            f"💬 {current_user.username} commented on your post!",
+            f"/community/post/{post_id}/comments"
+        )
 
     return redirect(url_for("view_comments", post_id=post_id))
 
@@ -2993,7 +3102,14 @@ def get_notifications():
     
     for n in notifs:
         n["_id"] = str(n["_id"])
-        n["time_ago"] = format_time_ago(n["created_at"])  # helper below
+        n["time_ago"] = format_time_ago(n["created_at"])
+        # Handle both message formats
+        if "message" not in n:
+            title = n.get("title", "")
+            body = n.get("body", "")
+            n["message"] = f"{title} — {body}" if body else title
+        if "link" not in n:
+            n["link"] = ""
     
     unread_count = db.notifications.count_documents({
         "user_id": str(current_user.id), "read": False
@@ -3191,3 +3307,124 @@ def admin_export_recipes_docx():
     return send_file(buffer,
                      mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                      as_attachment=True, download_name=filename)
+
+# ─────────────────────────────────────────────
+# NOTIFICATIONS SYSTEM
+# ─────────────────────────────────────────────
+
+def create_notification(user_id, notif_type, message, link=""):
+    """Creates a notification for a specific user."""
+    try:
+        db.notifications.insert_one({
+            "user_id": str(user_id),
+            "type": notif_type,
+            "message": message,
+            "link": link,
+            "read": False,
+            "created_at": datetime.now()
+        })
+    except Exception as e:
+        print(f"Notification error: {e}")
+
+
+def create_notification_for_all_admins(notif_type, message, link=""):
+    """Creates a notification for all admin users."""
+    admins = db.users.find({"is_admin": True})
+    for admin in admins:
+        create_notification(str(admin["_id"]), notif_type, message, link)
+
+# ─────────────────────────────────────────────
+# RECIPE RATINGS
+# ─────────────────────────────────────────────
+
+@app.route("/recipe/<recipe_name>/rate", methods=["POST"])
+@login_required
+def rate_recipe(recipe_name):
+    rating = request.form.get("rating")
+    review = request.form.get("review", "").strip()
+
+    # Validate rating
+    try:
+        rating = int(rating)
+        if rating < 1 or rating > 5:
+            raise ValueError
+    except (ValueError, TypeError):
+        flash("Please select a valid rating (1-5 stars).", "danger")
+        return redirect(url_for("recipe_detail", recipe_name=recipe_name))
+
+    # Check if user already rated this recipe
+    existing = db.recipe_ratings.find_one({
+        "recipe_name": recipe_name.lower(),
+        "user_id": current_user.id
+    })
+
+    if existing:
+        # Update existing rating
+        db.recipe_ratings.update_one(
+            {"_id": existing["_id"]},
+            {"$set": {
+                "rating": rating,
+                "review": review,
+                "updated_at": datetime.now()
+            }}
+        )
+        flash("Your rating has been updated!", "success")
+    else:
+        # New rating
+        db.recipe_ratings.insert_one({
+            "recipe_name": recipe_name.lower(),
+            "recipe_display_name": recipe_name,
+            "user_id": current_user.id,
+            "username": current_user.username,
+            "rating": rating,
+            "review": review,
+            "created_at": datetime.now()
+        })
+        flash("Thanks for rating this recipe! ⭐", "success")
+
+    return redirect(url_for("recipe_detail", recipe_name=recipe_name))
+
+
+@app.route("/recipe/<recipe_name>/ratings")
+@login_required
+def recipe_ratings(recipe_name):
+    ratings = list(db.recipe_ratings.find(
+        {"recipe_name": recipe_name.lower()}
+    ).sort("created_at", -1))
+
+    for r in ratings:
+        r["id"] = str(r["_id"])
+        r["created_at_fmt"] = r["created_at"].strftime("%b %d, %Y") if r.get("created_at") else ""
+
+    total = len(ratings)
+    average = round(sum(r["rating"] for r in ratings) / total, 1) if total > 0 else 0
+
+    # Star distribution
+    distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for r in ratings:
+        distribution[r["rating"]] = distribution.get(r["rating"], 0) + 1
+
+    # Check if current user already rated
+    user_rating = db.recipe_ratings.find_one({
+        "recipe_name": recipe_name.lower(),
+        "user_id": current_user.id
+    })
+
+    return render_template("recipe_ratings.html",
+                           recipe_name=recipe_name,
+                           ratings=ratings,
+                           total=total,
+                           average=average,
+                           distribution=distribution,
+                           user_rating=user_rating)
+
+
+@app.route("/recipe/<recipe_name>/ratings/delete", methods=["POST"])
+@login_required
+def delete_rating(recipe_name):
+    db.recipe_ratings.delete_one({
+        "recipe_name": recipe_name.lower(),
+        "user_id": current_user.id
+    })
+    flash("Your rating has been removed.", "success")
+    return redirect(url_for("recipe_detail", recipe_name=recipe_name))

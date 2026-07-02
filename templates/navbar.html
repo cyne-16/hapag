@@ -1,0 +1,388 @@
+<nav class="hapag-nav">
+    <div class="hapag-brand">
+        <div class="hapag-brand-icon">
+            <img src="{{ url_for('static', filename='images/icon.png') }}"
+                 alt="Hapag"
+                 style="width:18px;height:18px;object-fit:contain;">
+        </div>
+        Hapag
+    </div>
+
+    <div class="hapag-links">
+        <a href="{{ url_for('dashboard') }}">Home</a>
+        <a href="{{ url_for('recommend') }}">Recipes</a>
+        <a href="{{ url_for('challenges') }}">Challenges</a>
+        <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+        <a href="{{ url_for('community') }}">Community</a>
+        <a href="{{ url_for('cookbook') }}">Cookbook</a>
+        <a href="{{ url_for('profile') }}">Profile</a>
+    </div>
+
+    <div class="hapag-nav-right">
+
+        <!-- NOTIFICATION BELL -->
+        <div class="notif-bell-container">
+            <button class="hapag-bell" onclick="toggleNotifPanel()" id="notifBell">
+                🔔
+                <span class="notif-badge" id="notifCount" style="display:none;">0</span>
+            </button>
+
+            <!-- DROPDOWN PANEL -->
+            <div class="hapag-notif-panel" id="notifPanel" style="display:none;">
+                <div class="hapag-notif-head">
+                    <span class="hapag-notif-title">
+                        <span class="hapag-live-dot"></span>
+                        Notifications
+                    </span>
+                    <button type="button" class="hapag-mark-read-btn" onclick="markAllRead()">
+                        Mark all read
+                    </button>
+                </div>
+                <div class="hapag-notif-list" id="notifList">
+                    <p class="hapag-notif-empty">No new notifications</p>
+                </div>
+                <div class="hapag-notif-foot">🔄 Refreshes every 15 seconds</div>
+            </div>
+        </div>
+
+        <a class="hapag-logout-btn" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<!-- ─── Nav styles — add to style.css or a <style> block in base.html ─── -->
+<style>
+.hapag-nav {
+    background: #112236;
+    border-bottom: 1px solid #1e3d5c;
+    height: 60px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-family: 'Nunito', sans-serif;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    box-sizing: border-box;
+}
+
+/* Brand */
+.hapag-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 21px;
+    color: #F5A623;
+    text-decoration: none;
+    flex-shrink: 0;
+    letter-spacing: 0.01em;
+}
+.hapag-brand-icon {
+    width: 32px;
+    height: 32px;
+    background: #0D1B2A;
+    border: 1px solid #F5A623;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Nav links */
+.hapag-links {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+    justify-content: center;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.hapag-links::-webkit-scrollbar { display: none; }
+.hapag-links a {
+    font-size: 13px;
+    font-weight: 700;
+    color: #8FAABB;
+    text-decoration: none;
+    padding: 6px 11px;
+    border-radius: 8px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.hapag-links a:hover {
+    color: #FFF8EE;
+    background: rgba(255,255,255,0.06);
+    border-color: #1e3d5c;
+}
+.hapag-links a.active,
+.hapag-links a[aria-current="page"] {
+    color: #F5A623;
+    background: rgba(245,166,35,0.1);
+    border-color: rgba(245,166,35,0.3);
+}
+
+/* Right cluster */
+.hapag-nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Bell button */
+.hapag-bell {
+    width: 38px;
+    height: 38px;
+    background: #0D1B2A;
+    border: 1px solid #1e3d5c;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 17px;
+    color: #8FAABB;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    position: relative;
+}
+.hapag-bell:hover {
+    border-color: #F5A623;
+    color: #F5A623;
+    background: rgba(245,166,35,0.08);
+}
+
+/* Badge */
+.notif-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 17px;
+    height: 17px;
+    background: #FF6B35;
+    border: 2px solid #112236;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 900;
+    color: #0D1B2A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    font-family: 'Nunito', sans-serif;
+    animation: notif-badge-pop 0.3s cubic-bezier(.2,1.5,.4,1);
+}
+@keyframes notif-badge-pop {
+    from { transform: scale(0); }
+    to   { transform: scale(1); }
+}
+
+/* Dropdown panel */
+.notif-bell-container { position: relative; }
+
+.hapag-notif-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 300px;
+    background: #162d47;
+    border: 1px solid #1e3d5c;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 16px 40px -10px rgba(0,0,0,0.6);
+    z-index: 300;
+    animation: panel-drop 0.22s cubic-bezier(.2,.85,.3,1.1);
+}
+@keyframes panel-drop {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.hapag-notif-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid #1e3d5c;
+}
+.hapag-notif-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 15px;
+    color: #FFF8EE;
+}
+.hapag-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #2ECC71;
+    animation: live-pulse 1.8s infinite;
+}
+@keyframes live-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(46,204,113,0.55); }
+    50%      { box-shadow: 0 0 0 7px rgba(46,204,113,0); }
+}
+.hapag-mark-read-btn {
+    font-size: 11px;
+    font-weight: 800;
+    color: #F5A623;
+    background: rgba(245,166,35,0.1);
+    border: 1px solid rgba(245,166,35,0.3);
+    border-radius: 999px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: 'Nunito', sans-serif;
+}
+.hapag-mark-read-btn:hover { background: rgba(245,166,35,0.2); }
+
+.hapag-notif-list {
+    max-height: 260px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #1e3d5c transparent;
+}
+.hapag-notif-list::-webkit-scrollbar { width: 4px; }
+.hapag-notif-list::-webkit-scrollbar-track { background: transparent; }
+.hapag-notif-list::-webkit-scrollbar-thumb { background: #1e3d5c; border-radius: 4px; }
+
+/* Notification items — rendered by your existing JS innerHTML */
+.notif-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #1e3d5c;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: rgba(255,255,255,0.04); }
+.notif-message {
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFF8EE;
+    margin: 0 0 4px;
+    line-height: 1.45;
+    font-family: 'Nunito', sans-serif;
+}
+.notif-time {
+    font-size: 11px;
+    font-weight: 700;
+    color: #8FAABB;
+    font-family: 'Nunito', sans-serif;
+}
+
+/* Empty state — rendered by your existing JS */
+.hapag-notif-empty {
+    color: #8FAABB;
+    padding: 28px 16px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0;
+    font-family: 'Nunito', sans-serif;
+}
+
+.hapag-notif-foot {
+    padding: 10px 16px;
+    border-top: 1px solid #1e3d5c;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #8FAABB;
+}
+
+/* Logout */
+.hapag-logout-btn {
+    font-size: 13px;
+    font-weight: 800;
+    color: #8FAABB;
+    background: #0D1B2A;
+    border: 1px solid #1e3d5c;
+    border-radius: 9px;
+    padding: 7px 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+    font-family: 'Nunito', sans-serif;
+}
+.hapag-logout-btn:hover {
+    border-color: #FF6B35;
+    color: #FF6B35;
+}
+</style>
+
+<!-- ─── JS: ALL original logic preserved exactly, zero changes ─── -->
+<script>
+    let notifOpen = false;
+
+    function fetchNotifications() {
+        fetch('/notifications')
+            .then(r => r.json())
+            .then(data => {
+                const count = data.count;
+                const badge = document.getElementById('notifCount');
+                const list = document.getElementById('notifList');
+
+                if (count > 0) {
+                    badge.style.display = 'flex';
+                    badge.textContent = count > 9 ? '9+' : count;
+                } else {
+                    badge.style.display = 'none';
+                }
+
+                if (data.notifications.length === 0) {
+                    list.innerHTML = '<p class="hapag-notif-empty">No new notifications</p>';
+                } else {
+                    list.innerHTML = data.notifications.map(n => `
+                        <div class="notif-item" onclick="openNotif('${n.id}', '${n.link}')">
+                            <p class="notif-message">${n.message}</p>
+                            <span class="notif-time">${n.created_at}</span>
+                        </div>
+                    `).join('');
+                }
+            })
+            .catch(err => console.log('Notification fetch error:', err));
+    }
+
+    function toggleNotifPanel() {
+        const panel = document.getElementById('notifPanel');
+        notifOpen = !notifOpen;
+        panel.style.display = notifOpen ? 'block' : 'none';
+        if (notifOpen) fetchNotifications();
+    }
+
+    function openNotif(id, link) {
+        fetch(`/notifications/mark-one-read/${id}`, {method: 'POST'})
+            .then(() => {
+                if (link) window.location.href = link;
+                else toggleNotifPanel();
+            });
+    }
+
+    function markAllRead() {
+        // Clear UI immediately (optimistic) so the button always feels responsive
+        document.getElementById('notifCount').style.display = 'none';
+        document.getElementById('notifList').innerHTML =
+            '<p class="hapag-notif-empty">No new notifications</p>';
+        notifOpen = false;
+        document.getElementById('notifPanel').style.display = 'none';
+
+        // Then sync with server (fire-and-forget — UI is already cleared)
+        fetch('/notifications/mark-read', { method: 'POST' })
+            .catch(err => console.log('Mark-read error:', err));
+    }
+
+    document.addEventListener('click', function(e) {
+        const container = document.querySelector('.notif-bell-container');
+        if (container && !container.contains(e.target) && notifOpen) {
+            notifOpen = false;
+            document.getElementById('notifPanel').style.display = 'none';
+        }
+    });
+
+    fetchNotifications();
+    setInterval(fetchNotifications, 15000);
+</script>

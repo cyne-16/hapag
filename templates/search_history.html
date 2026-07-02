@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search History - Hapag</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    {% include 'navbar.html' %}
+
+    <div class="main-container">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h2>🔍 Search History</h2>
+                <p style="color:#888; margin-top:4px;">
+                    All your past recipe searches — click to search again instantly.
+                </p>
+            </div>
+            {% if history %}
+            <form method="POST" action="{{ url_for('delete_all_search_history') }}"
+                  onsubmit="return confirm('Clear your entire search history?')">
+                <button type="submit" class="btn-delete">
+                    🗑️ Clear All
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        {% if history %}
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">
+            {% for entry in history %}
+            <div class="search-history-card">
+
+                <!-- SEARCH DETAILS -->
+                <div class="search-history-info">
+                    <div class="search-history-dish">
+                        🔍 <strong>{{ entry.preferred_dish }}</strong>
+                    </div>
+                    <div class="search-history-meta">
+                        <span>💰 ₱{{ entry.budget }}</span>
+                        <span>👥 {{ entry.household_size }} person(s)</span>
+                        <span>🍽️ {{ entry.meal_type or "Any" }}</span>
+                        <span class="search-history-date">📅 {{ entry.searched_at_fmt }}</span>
+                    </div>
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="search-history-actions">
+                    <a href="{{ url_for('re_search', entry_id=entry.id) }}"
+                       class="btn" style="padding:8px 18px; font-size:0.85rem;">
+                        🔄 Search Again
+                    </a>
+                    <form method="POST"
+                          action="{{ url_for('delete_search_history', entry_id=entry.id) }}"
+                          onsubmit="return confirm('Delete this search entry?')">
+                        <button type="submit" class="btn-delete"
+                                style="padding:8px 14px; font-size:0.85rem;">
+                            🗑️
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="empty-state" style="margin-top:60px;">
+            <p>🔍 No search history yet.</p>
+            <p>Your searches will appear here after you look for recipes.</p>
+            <a href="{{ url_for('recommend') }}" class="btn" style="margin-top:16px;">
+                Find Recipes
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+
+</body>
+</html>
